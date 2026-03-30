@@ -1,0 +1,208 @@
+/**
+ * ============================================
+ * SIDEBAR COMPONENT
+ * ============================================
+ */
+
+import React from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { clsx } from 'clsx';
+import { useUIStore } from '@/store/uiStore';
+import { useAuthStore } from '@/store/authStore';
+import {
+  HomeIcon,
+  UserGroupIcon,
+  AcademicCapIcon,
+  BookOpenIcon,
+  CalendarIcon,
+  ClipboardDocumentCheckIcon,
+  ChartBarIcon,
+  BuildingOfficeIcon,
+  CalendarDaysIcon,
+  DocumentTextIcon,
+  WrenchScrewdriverIcon,
+  CogIcon,
+  ArrowLeftOnRectangleIcon,
+  Bars3Icon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
+
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  roles?: string[];
+}
+
+const navigation: NavItem[] = [
+  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+  { name: 'Estudiantes', href: '/students', icon: UserGroupIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO', 'DOCENTE'] },
+  { name: 'Docentes', href: '/teachers', icon: AcademicCapIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO'] },
+  { name: 'Programas', href: '/programs', icon: BookOpenIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO', 'DOCENTE'] },
+  { name: 'Grupos', href: '/groups', icon: CalendarIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO', 'DOCENTE'] },
+  { name: 'Matrículas', href: '/enrollments', icon: ClipboardDocumentCheckIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO'] },
+  { name: 'Asistencia', href: '/attendance', icon: CalendarDaysIcon, roles: ['ADMIN', 'DOCENTE'] },
+  { name: 'Evaluaciones', href: '/evaluations', icon: ChartBarIcon, roles: ['ADMIN', 'DOCENTE'] },
+  { name: 'Escenarios', href: '/venues', icon: BuildingOfficeIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO', 'TECNICO_OPERATIVO'] },
+  { name: 'Reservas', href: '/reservations', icon: CalendarDaysIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO'] },
+  { name: 'Contratos', href: '/contracts', icon: DocumentTextIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO', 'OFICINA_JURIDICA'] },
+  { name: 'Mantenimiento', href: '/maintenance', icon: WrenchScrewdriverIcon, roles: ['ADMIN', 'TECNICO_OPERATIVO', 'OPERARIO_LOGISTICO'] },
+  { name: 'Reportes', href: '/reports', icon: ChartBarIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO'] },
+  { name: 'Configuración', href: '/settings', icon: CogIcon, roles: ['ADMIN'] },
+];
+
+export const Sidebar: React.FC = () => {
+  const navigate = useNavigate();
+  const { sidebarOpen, sidebarCollapsed, setSidebarOpen, toggleSidebarCollapse } = useUIStore();
+  const { user, logout } = useAuthStore();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const filteredNavigation = navigation.filter(
+    (item) => !item.roles || item.roles.includes(user?.role || '')
+  );
+
+  return (
+    <motion.aside
+      initial={false}
+      animate={{
+        width: sidebarCollapsed ? 80 : 256,
+        x: sidebarOpen ? 0 : -256,
+      }}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      className={clsx(
+        'fixed top-0 left-0 z-40 h-screen',
+        'bg-white dark:bg-dark-800',
+        'border-r border-dark-200 dark:border-dark-700',
+        'flex flex-col',
+        'lg:translate-x-0'
+      )}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between h-16 px-4 border-b border-dark-200 dark:border-dark-700">
+        {!sidebarCollapsed && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center gap-3"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
+              <span className="text-white font-bold text-lg">LT</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="font-display font-semibold text-dark-900 dark:text-white">
+                Lucy Tejada
+              </span>
+              <span className="text-xs text-dark-500 dark:text-dark-400">
+                Centro Cultural
+              </span>
+            </div>
+          </motion.div>
+        )}
+
+        <button
+          onClick={toggleSidebarCollapse}
+          className="p-2 rounded-lg hover:bg-dark-100 dark:hover:bg-dark-700 text-dark-500 hidden lg:block"
+        >
+          {sidebarCollapsed ? (
+            <Bars3Icon className="w-5 h-5" />
+          ) : (
+            <XMarkIcon className="w-5 h-5" />
+          )}
+        </button>
+
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="p-2 rounded-lg hover:bg-dark-100 dark:hover:bg-dark-700 text-dark-500 lg:hidden"
+        >
+          <XMarkIcon className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-1">
+        {filteredNavigation.map((item) => (
+          <NavLink
+            key={item.name}
+            to={item.href}
+            className={({ isActive }) =>
+              clsx(
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl',
+                'transition-all duration-200',
+                'group',
+                isActive
+                  ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 font-medium'
+                  : 'text-dark-600 dark:text-dark-300 hover:bg-dark-100 dark:hover:bg-dark-700'
+              )
+            }
+            onClick={() => window.innerWidth < 1024 && setSidebarOpen(false)}
+          >
+            <item.icon
+              className={clsx(
+                'w-5 h-5 flex-shrink-0',
+                'transition-transform group-hover:scale-110'
+              )}
+            />
+            {!sidebarCollapsed && (
+              <motion.span
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="truncate"
+              >
+                {item.name}
+              </motion.span>
+            )}
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* User Section */}
+      <div className="p-3 border-t border-dark-200 dark:border-dark-700">
+        {!sidebarCollapsed && user && (
+          <div className="flex items-center gap-3 px-3 py-2 mb-2">
+            <div className="avatar-md">
+              {user.profile?.photoUrl ? (
+                <img
+                  src={user.profile.photoUrl}
+                  alt={user.profile.firstName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span>
+                  {user.profile?.firstName?.[0] || user.email[0].toUpperCase()}
+                </span>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-dark-900 dark:text-white truncate">
+                {user.profile?.firstName} {user.profile?.lastName}
+              </p>
+              <p className="text-xs text-dark-500 dark:text-dark-400 truncate">
+                {user.email}
+              </p>
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={handleLogout}
+          className={clsx(
+            'flex items-center gap-3 w-full px-3 py-2.5 rounded-xl',
+            'text-red-600 dark:text-red-400',
+            'hover:bg-red-50 dark:hover:bg-red-900/20',
+            'transition-colors'
+          )}
+        >
+          <ArrowLeftOnRectangleIcon className="w-5 h-5" />
+          {!sidebarCollapsed && <span>Cerrar sesión</span>}
+        </button>
+      </div>
+    </motion.aside>
+  );
+};
+
+export default Sidebar;
