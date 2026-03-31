@@ -12,6 +12,19 @@ import MainLayout from '@/components/layout/MainLayout';
 // Lazy load pages
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
+const StudentsPage = lazy(() => import('@/pages/StudentsPage'));
+const TeachersPage = lazy(() => import('@/pages/TeachersPage'));
+const ProgramsPage = lazy(() => import('@/pages/ProgramsPage'));
+const GroupsPage = lazy(() => import('@/pages/GroupsPage'));
+const EnrollmentsPage = lazy(() => import('@/pages/EnrollmentsPage'));
+const AttendancePage = lazy(() => import('@/pages/AttendancePage'));
+const EvaluationsPage = lazy(() => import('@/pages/EvaluationsPage'));
+const VenuesPage = lazy(() => import('@/pages/AdditionalPages').then(m => ({ default: m.VenuesPage })));
+const ReservationsPage = lazy(() => import('@/pages/AdditionalPages').then(m => ({ default: m.ReservationsPage })));
+const ContractsPage = lazy(() => import('@/pages/AdditionalPages').then(m => ({ default: m.ContractsPage })));
+const MaintenancePage = lazy(() => import('@/pages/AdditionalPages').then(m => ({ default: m.MaintenancePage })));
+const ReportsPage = lazy(() => import('@/pages/AdditionalPages').then(m => ({ default: m.ReportsPage })));
+const SettingsPage = lazy(() => import('@/pages/AdditionalPages').then(m => ({ default: m.SettingsPage })));
 
 // Loading fallback
 const PageLoader: React.FC = () => (
@@ -96,10 +109,7 @@ export const router = createBrowserRouter([
             path: '/students',
             element: (
               <Suspense fallback={<PageLoader />}>
-                <div className="card p-8 text-center">
-                  <h2 className="text-2xl font-bold mb-4">Gestión de Estudiantes</h2>
-                  <p className="text-dark-500">Módulo en desarrollo...</p>
-                </div>
+                <StudentsPage />
               </Suspense>
             ),
           },
@@ -107,10 +117,7 @@ export const router = createBrowserRouter([
             path: '/teachers',
             element: (
               <Suspense fallback={<PageLoader />}>
-                <div className="card p-8 text-center">
-                  <h2 className="text-2xl font-bold mb-4">Gestión de Docentes</h2>
-                  <p className="text-dark-500">Módulo en desarrollo...</p>
-                </div>
+                <TeachersPage />
               </Suspense>
             ),
           },
@@ -118,10 +125,7 @@ export const router = createBrowserRouter([
             path: '/programs',
             element: (
               <Suspense fallback={<PageLoader />}>
-                <div className="card p-8 text-center">
-                  <h2 className="text-2xl font-bold mb-4">Programas Formativos</h2>
-                  <p className="text-dark-500">Módulo en desarrollo...</p>
-                </div>
+                <ProgramsPage />
               </Suspense>
             ),
           },
@@ -129,10 +133,7 @@ export const router = createBrowserRouter([
             path: '/groups',
             element: (
               <Suspense fallback={<PageLoader />}>
-                <div className="card p-8 text-center">
-                  <h2 className="text-2xl font-bold mb-4">Grupos y Clases</h2>
-                  <p className="text-dark-500">Módulo en desarrollo...</p>
-                </div>
+                <GroupsPage />
               </Suspense>
             ),
           },
@@ -140,10 +141,7 @@ export const router = createBrowserRouter([
             path: '/enrollments',
             element: (
               <Suspense fallback={<PageLoader />}>
-                <div className="card p-8 text-center">
-                  <h2 className="text-2xl font-bold mb-4">Matrículas</h2>
-                  <p className="text-dark-500">Módulo en desarrollo...</p>
-                </div>
+                <EnrollmentsPage />
               </Suspense>
             ),
           },
@@ -151,10 +149,7 @@ export const router = createBrowserRouter([
             path: '/attendance',
             element: (
               <Suspense fallback={<PageLoader />}>
-                <div className="card p-8 text-center">
-                  <h2 className="text-2xl font-bold mb-4">Control de Asistencia</h2>
-                  <p className="text-dark-500">Módulo en desarrollo...</p>
-                </div>
+                <AttendancePage />
               </Suspense>
             ),
           },
@@ -162,10 +157,7 @@ export const router = createBrowserRouter([
             path: '/evaluations',
             element: (
               <Suspense fallback={<PageLoader />}>
-                <div className="card p-8 text-center">
-                  <h2 className="text-2xl font-bold mb-4">Evaluaciones Cualitativas</h2>
-                  <p className="text-dark-500">Módulo en desarrollo...</p>
-                </div>
+                <EvaluationsPage />
               </Suspense>
             ),
           },
@@ -173,10 +165,7 @@ export const router = createBrowserRouter([
             path: '/venues',
             element: (
               <Suspense fallback={<PageLoader />}>
-                <div className="card p-8 text-center">
-                  <h2 className="text-2xl font-bold mb-4">Escenarios Culturales</h2>
-                  <p className="text-dark-500">Módulo en desarrollo...</p>
-                </div>
+                <VenuesPage />
               </Suspense>
             ),
           },
@@ -184,10 +173,7 @@ export const router = createBrowserRouter([
             path: '/reservations',
             element: (
               <Suspense fallback={<PageLoader />}>
-                <div className="card p-8 text-center">
-                  <h2 className="text-2xl font-bold mb-4">Reservas de Escenarios</h2>
-                  <p className="text-dark-500">Módulo en desarrollo...</p>
-                </div>
+                <ReservationsPage />
               </Suspense>
             ),
           },
@@ -195,10 +181,7 @@ export const router = createBrowserRouter([
             path: '/contracts',
             element: (
               <Suspense fallback={<PageLoader />}>
-                <div className="card p-8 text-center">
-                  <h2 className="text-2xl font-bold mb-4">Contratos</h2>
-                  <p className="text-dark-500">Módulo en desarrollo...</p>
-                </div>
+                <ContractsPage />
               </Suspense>
             ),
           },
@@ -206,10 +189,7 @@ export const router = createBrowserRouter([
             path: '/maintenance',
             element: (
               <Suspense fallback={<PageLoader />}>
-                <div className="card p-8 text-center">
-                  <h2 className="text-2xl font-bold mb-4">Mantenimiento</h2>
-                  <p className="text-dark-500">Módulo en desarrollo...</p>
-                </div>
+                <MaintenancePage />
               </Suspense>
             ),
           },
@@ -217,10 +197,7 @@ export const router = createBrowserRouter([
             path: '/reports',
             element: (
               <Suspense fallback={<PageLoader />}>
-                <div className="card p-8 text-center">
-                  <h2 className="text-2xl font-bold mb-4">Reportes</h2>
-                  <p className="text-dark-500">Módulo en desarrollo...</p>
-                </div>
+                <ReportsPage />
               </Suspense>
             ),
           },
@@ -228,10 +205,7 @@ export const router = createBrowserRouter([
             path: '/settings',
             element: (
               <Suspense fallback={<PageLoader />}>
-                <div className="card p-8 text-center">
-                  <h2 className="text-2xl font-bold mb-4">Configuración</h2>
-                  <p className="text-dark-500">Módulo en desarrollo...</p>
-                </div>
+                <SettingsPage />
               </Suspense>
             ),
           },
