@@ -5,33 +5,31 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Colores primarios inspirados en arte y cultura
         primary: {
-          50: '#F5F3FF',
-          100: '#EDE9FE',
-          200: '#DDD6FE',
-          300: '#C4B5FD',
-          400: '#A78BFA',
-          500: '#8B5CF6',
-          600: '#7C3AED',
-          700: '#6D28D9',
-          800: '#5B21B6',
-          900: '#4C1D95',
-          950: '#2E1065',
+          50: 'rgb(var(--primary-50) / <alpha-value>)',
+          100: 'rgb(var(--primary-100) / <alpha-value>)',
+          200: 'rgb(var(--primary-200) / <alpha-value>)',
+          300: 'rgb(var(--primary-300) / <alpha-value>)',
+          400: 'rgb(var(--primary-400) / <alpha-value>)',
+          500: 'rgb(var(--primary-500) / <alpha-value>)',
+          600: 'rgb(var(--primary-600) / <alpha-value>)',
+          700: 'rgb(var(--primary-700) / <alpha-value>)',
+          800: 'rgb(var(--primary-800) / <alpha-value>)',
+          900: 'rgb(var(--primary-900) / <alpha-value>)',
+          950: 'rgb(var(--primary-950) / <alpha-value>)',
         },
-        // Colores secundarios - tonos cálidos culturales
         secondary: {
-          50: '#FFF7ED',
-          100: '#FFEDD5',
-          200: '#FED7AA',
-          300: '#FDBA74',
-          400: '#FB923C',
-          500: '#F97316',
-          600: '#EA580C',
-          700: '#C2410C',
-          800: '#9A3412',
-          900: '#7C2D12',
-          950: '#431407',
+          50: 'rgb(var(--secondary-50) / <alpha-value>)',
+          100: 'rgb(var(--secondary-100) / <alpha-value>)',
+          200: 'rgb(var(--secondary-200) / <alpha-value>)',
+          300: 'rgb(var(--secondary-300) / <alpha-value>)',
+          400: 'rgb(var(--secondary-400) / <alpha-value>)',
+          500: 'rgb(var(--secondary-500) / <alpha-value>)',
+          600: 'rgb(var(--secondary-600) / <alpha-value>)',
+          700: 'rgb(var(--secondary-700) / <alpha-value>)',
+          800: 'rgb(var(--secondary-800) / <alpha-value>)',
+          900: 'rgb(var(--secondary-900) / <alpha-value>)',
+          950: 'rgb(var(--secondary-950) / <alpha-value>)',
         },
         // Colores de acento - tonos artísticos
         accent: {
@@ -58,8 +56,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        display: ['Playfair Display', 'Georgia', 'serif'],
+        sans: ['var(--font-sans)', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['var(--font-display)', 'Playfair Display', 'Georgia', 'serif'],
         mono: ['JetBrains Mono', 'Consolas', 'monospace'],
       },
       animation: {

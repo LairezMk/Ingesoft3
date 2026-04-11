@@ -24,7 +24,7 @@ const queryClient = new QueryClient({
 });
 
 export const App: React.FC = () => {
-  const { darkMode, setDarkMode } = useUIStore();
+  const { darkMode, setDarkMode, theme, setTheme } = useUIStore();
   const { setLoading } = useAuthStore();
 
   // Initialize dark mode from localStorage
@@ -33,8 +33,9 @@ export const App: React.FC = () => {
     if (storedMode) {
       try {
         const parsed = JSON.parse(storedMode);
-        if (parsed.state?.darkMode) {
-          document.documentElement.classList.add('dark');
+        document.documentElement.classList.toggle('dark', Boolean(parsed.state?.darkMode));
+        if (parsed.state?.theme) {
+          document.documentElement.setAttribute('data-theme', parsed.state.theme);
         }
       } catch {
         // Ignore parse errors
@@ -45,6 +46,7 @@ export const App: React.FC = () => {
     if (!storedMode) {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       setDarkMode(prefersDark);
+      setTheme('lucy');
     }
 
     // Set loading to false after initial check
@@ -53,7 +55,11 @@ export const App: React.FC = () => {
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [setDarkMode, setLoading]);
+  }, [setDarkMode, setLoading, setTheme]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -8,10 +8,25 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
+export type ThemeName = 'lucy' | 'ocean' | 'sunset' | 'forest';
+
+const applyDarkClass = (dark: boolean) => {
+  if (dark) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+};
+
+const applyThemeAttribute = (theme: ThemeName) => {
+  document.documentElement.setAttribute('data-theme', theme);
+};
+
 interface UIState {
   sidebarOpen: boolean;
   sidebarCollapsed: boolean;
   darkMode: boolean;
+  theme: ThemeName;
   activeModal: string | null;
   notifications: Notification[];
 
@@ -21,6 +36,7 @@ interface UIState {
   toggleSidebarCollapse: () => void;
   toggleDarkMode: () => void;
   setDarkMode: (dark: boolean) => void;
+  setTheme: (theme: ThemeName) => void;
   openModal: (modalId: string) => void;
   closeModal: () => void;
   addNotification: (notification: Notification) => void;
@@ -42,6 +58,7 @@ export const useUIStore = create<UIState>()(
       sidebarOpen: true,
       sidebarCollapsed: false,
       darkMode: false,
+      theme: 'lucy',
       activeModal: null,
       notifications: [],
 
@@ -56,21 +73,18 @@ export const useUIStore = create<UIState>()(
       toggleDarkMode: () =>
         set((state) => {
           const newDarkMode = !state.darkMode;
-          if (newDarkMode) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
+          applyDarkClass(newDarkMode);
           return { darkMode: newDarkMode };
         }),
 
       setDarkMode: (dark) => {
-        if (dark) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
+        applyDarkClass(dark);
         set({ darkMode: dark });
+      },
+
+      setTheme: (theme) => {
+        applyThemeAttribute(theme);
+        set({ theme });
       },
 
       openModal: (modalId) => set({ activeModal: modalId }),
@@ -95,6 +109,7 @@ export const useUIStore = create<UIState>()(
       partialize: (state) => ({
         sidebarCollapsed: state.sidebarCollapsed,
         darkMode: state.darkMode,
+        theme: state.theme,
       }),
     }
   )

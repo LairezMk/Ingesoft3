@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -334,14 +335,14 @@ export const DashboardPage: React.FC = () => {
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { icon: '👤', label: 'Nuevo Estudiante', href: '/students/new' },
-            { icon: '📝', label: 'Nueva Matrícula', href: '/enrollments/new' },
-            { icon: '📅', label: 'Nueva Reserva', href: '/reservations/new' },
+            { icon: '👤', label: 'Nuevo Estudiante', href: '/students' },
+            { icon: '📝', label: 'Nueva Matrícula', href: '/enrollments' },
+            { icon: '📅', label: 'Nueva Reserva', href: '/reservations' },
             { icon: '📊', label: 'Generar Reporte', href: '/reports' },
           ].map((action, index) => (
-            <a
+            <Link
               key={index}
-              href={action.href}
+              to={action.href}
               className="flex flex-col items-center gap-3 p-4 rounded-xl bg-dark-50 dark:bg-dark-800 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors group"
             >
               <span className="text-3xl group-hover:scale-110 transition-transform">
@@ -350,7 +351,7 @@ export const DashboardPage: React.FC = () => {
               <span className="text-sm font-medium text-dark-700 dark:text-dark-200 text-center">
                 {action.label}
               </span>
-            </a>
+            </Link>
           ))}
         </div>
       </motion.div>

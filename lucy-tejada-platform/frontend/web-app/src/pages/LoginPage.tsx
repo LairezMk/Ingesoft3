@@ -14,13 +14,61 @@ import { Input } from '@/components/ui/Input';
 import { useAuthStore } from '@/store/authStore';
 import { authService } from '@/services/authService';
 import { getErrorMessage } from '@/services/api';
-import { EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import lucyTejadaBackground from '@/assets/images/LUCY-TEJADA.jpeg';
+import logoImage from '@/assets/images/logo.png';
+import {
+  EnvelopeIcon,
+  LockClosedIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  MusicalNoteIcon,
+  PaintBrushIcon,
+} from '@heroicons/react/24/outline';
 
 interface LoginFormData {
   email: string;
   password: string;
   rememberMe: boolean;
 }
+
+const TheaterMaskIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <path
+      d="M4.5 5.5h15v9.5a7.5 7.5 0 0 1-15 0V5.5Z"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path d="M8 10h.01M16 10h.01" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+    <path
+      d="M8.5 14.5c1.1 1 2.2 1.5 3.5 1.5s2.4-.5 3.5-1.5"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const DanceIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <circle cx="12" cy="4.8" r="2.1" stroke="currentColor" strokeWidth="1.8" />
+    <path
+      d="M12 7v3.2m0 0-3.2 2.1m3.2-2.1 3.4 2.2M8.4 15.1l-3 2.4m6.6-2.4 2.4 3.7m-1.9-8.6 2.8-1.8"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M9.3 8.4 7.7 6.8M15.8 15.8l2.4 1.2"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -69,20 +117,24 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen flex">
       {/* Left Panel - Decorative */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary-600 via-primary-700 to-secondary-600">
-        <div className="absolute inset-0 bg-[url('/pattern.svg')] opacity-10" />
+      <div
+        className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-cover bg-center"
+        style={{ backgroundImage: `url(${lucyTejadaBackground})` }}
+      >
+        <div className="absolute inset-0 bg-slate-950/55" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-950/45 via-primary-900/30 to-secondary-900/45" />
         <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20">
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-4xl xl:text-5xl font-display font-bold text-white mb-6">
+            <h1 className="text-7xl xl:text-7xl font-display font-bold text-white mb-6">
               Centro Cultural
               <br />
               <span className="text-secondary-300">Lucy Tejada</span>
             </h1>
-            <p className="text-lg text-primary-100 max-w-md">
+            <p className="text-2xl leading-relaxed text-primary-100 max-w-lg">
               Plataforma de gestión institucional para la formación artística
               y cultural de Pereira, Colombia.
             </p>
@@ -95,25 +147,46 @@ export const LoginPage: React.FC = () => {
             className="mt-12 grid grid-cols-2 gap-6"
           >
             {[
-              { icon: '🎭', label: 'Teatro' },
-              { icon: '💃', label: 'Danza' },
-              { icon: '🎵', label: 'Música' },
-              { icon: '🎨', label: 'Artes Visuales' },
+              {
+                icon: TheaterMaskIcon,
+                label: 'Teatro',
+                iconContainerClass: 'bg-cyan-500/25 ring-1 ring-cyan-300/50',
+                iconClass: 'text-cyan-200',
+              },
+              {
+                icon: DanceIcon,
+                label: 'Danza',
+                iconContainerClass: 'bg-pink-500/25 ring-1 ring-pink-300/50',
+                iconClass: 'text-pink-200',
+              },
+              {
+                icon: MusicalNoteIcon,
+                label: 'Música',
+                iconContainerClass: 'bg-violet-500/25 ring-1 ring-violet-300/50',
+                iconClass: 'text-violet-200',
+              },
+              {
+                icon: PaintBrushIcon,
+                label: 'Artes Visuales',
+                iconContainerClass: 'bg-amber-500/25 ring-1 ring-amber-300/50',
+                iconClass: 'text-amber-200',
+              },
             ].map((item, index) => (
               <div
                 key={index}
                 className="flex items-center gap-3 p-4 rounded-xl bg-white/10 backdrop-blur-sm"
               >
-                <span className="text-3xl">{item.icon}</span>
-                <span className="text-white font-medium">{item.label}</span>
+                <div
+                  className={`flex h-11 w-11 items-center justify-center rounded-lg ${item.iconContainerClass}`}
+                >
+                  <item.icon className={`w-6 h-6 ${item.iconClass}`} />
+                </div>
+                <span className="text-xl text-white font-medium">{item.label}</span>
               </div>
             ))}
           </motion.div>
         </div>
 
-        {/* Decorative circles */}
-        <div className="absolute bottom-0 right-0 w-64 h-64 bg-secondary-500/30 rounded-full blur-3xl" />
-        <div className="absolute top-20 right-20 w-32 h-32 bg-primary-400/30 rounded-full blur-2xl" />
       </div>
 
       {/* Right Panel - Login Form */}
@@ -125,8 +198,12 @@ export const LoginPage: React.FC = () => {
           className="w-full max-w-md"
         >
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-secondary-500 mb-4">
-              <span className="text-3xl">🎭</span>
+            <div className="inline-flex items-center justify-center w-60 h-60 rounded-2xl overflow-hidden bg-white shadow-sm ring-1 ring-dark-200 mb-6 dark:bg-dark-800 dark:ring-dark-700">
+              <img
+                src={logoImage}
+                alt="Logo Centro Cultural Lucy Tejada"
+                className="w-full h-full object-cover"
+              />
             </div>
             <h2 className="text-2xl font-display font-bold text-dark-900 dark:text-white">
               Iniciar Sesión
@@ -213,7 +290,7 @@ export const LoginPage: React.FC = () => {
 
           <div className="mt-8 text-center">
             <p className="text-sm text-dark-500 dark:text-dark-400">
-              © 2024 Centro Cultural Lucy Tejada
+              © 2026 Centro Cultural Lucy Tejada
               <br />
               Alcaldía de Pereira
             </p>

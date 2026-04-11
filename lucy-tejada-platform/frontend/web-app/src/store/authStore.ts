@@ -16,8 +16,15 @@ export interface User {
     firstName: string;
     lastName: string;
     photoUrl?: string;
+    identification?: string;
+    phone?: string;
+    city?: string;
+    position?: string;
+    bio?: string;
   };
 }
+
+export type UserProfile = NonNullable<User["profile"]>;
 
 interface AuthState {
   user: User | null;
@@ -32,6 +39,7 @@ interface AuthState {
   login: (user: User, accessToken: string, refreshToken: string) => void;
   logout: () => void;
   setLoading: (loading: boolean) => void;
+  updateUserProfile: (profile: Partial<UserProfile>) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -68,6 +76,25 @@ export const useAuthStore = create<AuthState>()(
         }),
 
       setLoading: (isLoading) => set({ isLoading }),
+      updateUserProfile: (profile) =>
+        set((state) => {
+          if (!state.user) return state;
+
+          const currentProfile = state.user.profile ?? {
+            firstName: "",
+            lastName: "",
+          };
+
+          return {
+            user: {
+              ...state.user,
+              profile: {
+                ...currentProfile,
+                ...profile,
+              },
+            },
+          };
+        }),
     }),
     {
       name: 'auth-storage',

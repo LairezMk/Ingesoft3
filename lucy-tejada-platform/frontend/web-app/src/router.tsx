@@ -24,6 +24,7 @@ const ReservationsPage = lazy(() => import('@/pages/AdditionalPages').then(m => 
 const ContractsPage = lazy(() => import('@/pages/AdditionalPages').then(m => ({ default: m.ContractsPage })));
 const MaintenancePage = lazy(() => import('@/pages/AdditionalPages').then(m => ({ default: m.MaintenancePage })));
 const ReportsPage = lazy(() => import('@/pages/AdditionalPages').then(m => ({ default: m.ReportsPage })));
+const ProfilePage = lazy(() => import('@/pages/AdditionalPages').then(m => ({ default: m.ProfilePage })));
 const SettingsPage = lazy(() => import('@/pages/AdditionalPages').then(m => ({ default: m.SettingsPage })));
 
 // Loading fallback
@@ -198,6 +199,14 @@ export const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageLoader />}>
                 <ReportsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: '/profile',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <ProfilePage />
               </Suspense>
             ),
           },

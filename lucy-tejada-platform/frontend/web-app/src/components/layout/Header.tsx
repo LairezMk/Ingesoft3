@@ -7,6 +7,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
+import { useNavigate } from 'react-router-dom';
 import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
 import {
@@ -18,6 +19,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export const Header: React.FC = () => {
+  const navigate = useNavigate();
   const { darkMode, toggleDarkMode, setSidebarOpen } = useUIStore();
   const { user } = useAuthStore();
 
@@ -87,7 +89,12 @@ export const Header: React.FC = () => {
 
           {/* User Menu */}
           <div className="hidden sm:flex items-center gap-3 pl-3 ml-2 border-l border-dark-200 dark:border-dark-700">
-            <div className="avatar-md cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all">
+            <button
+              type="button"
+              onClick={() => navigate('/profile')}
+              className="avatar-md cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all"
+              title="Ver perfil"
+            >
               {user?.profile?.photoUrl ? (
                 <img
                   src={user.profile.photoUrl}
@@ -99,10 +106,17 @@ export const Header: React.FC = () => {
                   {user?.profile?.firstName?.[0] || user?.email[0].toUpperCase()}
                 </span>
               )}
-            </div>
-            <div className="hidden lg:block">
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/profile')}
+              className="hidden lg:block text-left hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+              title="Editar perfil"
+            >
               <p className="text-sm font-medium text-dark-900 dark:text-white">
-                {user?.profile?.firstName} {user?.profile?.lastName}
+                {user?.profile?.firstName
+                  ? `${user.profile.firstName} ${user.profile?.lastName ?? ''}`.trim()
+                  : user?.email}
               </p>
               <p className="text-xs text-dark-500 dark:text-dark-400">
                 {user?.role === 'ADMIN' ? 'Administrador' :
@@ -110,7 +124,7 @@ export const Header: React.FC = () => {
                  user?.role === 'ESTUDIANTE' ? 'Estudiante' :
                  user?.role}
               </p>
-            </div>
+            </button>
           </div>
         </div>
       </div>

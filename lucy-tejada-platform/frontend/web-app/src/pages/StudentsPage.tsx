@@ -4,16 +4,16 @@
  * ============================================
  */
 
-import React, { useState, useEffect } from 'react';
-import { mockApi, storage } from '@/services/mockApi';
-import { 
-  PlusIcon, 
-  PencilIcon, 
-  TrashIcon, 
+import React, { useState, useEffect } from "react";
+import { mockApi, storage } from "@/services/mockApi";
+import {
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
-  UserGroupIcon
-} from '@heroicons/react/24/outline';
+  UserGroupIcon,
+} from "@heroicons/react/24/outline";
 
 interface Student {
   id: string;
@@ -34,7 +34,7 @@ interface Student {
 const StudentsPage: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [formData, setFormData] = useState<Partial<Student>>({});
@@ -48,10 +48,13 @@ const StudentsPage: React.FC = () => {
   // Filtrar estudiantes
   useEffect(() => {
     if (searchTerm) {
-      const filtered = students.filter(student =>
-        `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.documentNumber.includes(searchTerm) ||
-        student.email.toLowerCase().includes(searchTerm.toLowerCase())
+      const filtered = students.filter(
+        (student) =>
+          `${student.firstName} ${student.lastName}`
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          student.documentNumber.includes(searchTerm) ||
+          student.email.toLowerCase().includes(searchTerm.toLowerCase()),
       );
       setFilteredStudents(filtered);
     } else {
@@ -65,7 +68,7 @@ const StudentsPage: React.FC = () => {
       const response = await mockApi.getStudents(1, 100);
       setStudents(response.data?.data || []);
     } catch (error) {
-      console.error('Error loading students:', error);
+      console.error("Error loading students:", error);
     } finally {
       setLoading(false);
     }
@@ -74,9 +77,9 @@ const StudentsPage: React.FC = () => {
   const handleCreate = () => {
     setEditingStudent(null);
     setFormData({
-      documentType: 'CC',
-      gender: 'MALE',
-      enrollmentStatus: 'ACTIVE'
+      documentType: "CC",
+      gender: "MALE",
+      enrollmentStatus: "ACTIVE",
     });
     setIsModalOpen(true);
   };
@@ -88,7 +91,7 @@ const StudentsPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('¿Estás seguro de eliminar este estudiante?')) {
+    if (window.confirm("¿Estás seguro de eliminar este estudiante?")) {
       await mockApi.deleteStudent(id);
       loadStudents();
     }
@@ -107,8 +110,8 @@ const StudentsPage: React.FC = () => {
       setIsModalOpen(false);
       loadStudents();
     } catch (error) {
-      console.error('Error saving student:', error);
-      alert('Error al guardar estudiante');
+      console.error("Error saving student:", error);
+      alert("Error al guardar estudiante");
     } finally {
       setLoading(false);
     }
@@ -176,7 +179,7 @@ const StudentsPage: React.FC = () => {
             <div>
               <p className="text-sm text-dark-500">Activos</p>
               <p className="text-2xl font-bold text-success-600">
-                {students.filter(s => s.enrollmentStatus === 'ACTIVE').length}
+                {students.filter((s) => s.enrollmentStatus === "ACTIVE").length}
               </p>
             </div>
           </div>
@@ -200,7 +203,7 @@ const StudentsPage: React.FC = () => {
             <div>
               <p className="text-sm text-dark-500">Inactivos</p>
               <p className="text-2xl font-bold text-error-600">
-                {students.filter(s => s.enrollmentStatus !== 'ACTIVE').length}
+                {students.filter((s) => s.enrollmentStatus !== "ACTIVE").length}
               </p>
             </div>
           </div>
@@ -235,38 +238,54 @@ const StudentsPage: React.FC = () => {
             </thead>
             <tbody className="bg-white dark:bg-dark-900 divide-y divide-dark-200 dark:divide-dark-700">
               {filteredStudents.map((student) => (
-                <tr key={student.id} className="hover:bg-dark-50 dark:hover:bg-dark-800">
+                <tr
+                  key={student.id}
+                  className="hover:bg-dark-50 dark:hover:bg-dark-800"
+                >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-secondary-400 flex items-center justify-center text-white font-semibold">
-                        {student.firstName[0]}{student.lastName[0]}
+                        {student.firstName[0]}
+                        {student.lastName[0]}
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-dark-900 dark:text-dark-100">
                           {student.firstName} {student.lastName}
                         </div>
-                        <div className="text-sm text-dark-500">{student.gender === 'MALE' ? 'Masculino' : 'Femenino'}</div>
+                        <div className="text-sm text-dark-500">
+                          {student.gender === "MALE" ? "Masculino" : "Femenino"}
+                        </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-dark-900 dark:text-dark-100">{student.documentType}</div>
-                    <div className="text-sm text-dark-500">{student.documentNumber}</div>
+                    <div className="text-sm text-dark-900 dark:text-dark-100">
+                      {student.documentType}
+                    </div>
+                    <div className="text-sm text-dark-500">
+                      {student.documentNumber}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-dark-900 dark:text-dark-100">{student.email}</div>
+                    <div className="text-sm text-dark-900 dark:text-dark-100">
+                      {student.email}
+                    </div>
                     <div className="text-sm text-dark-500">{student.phone}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-dark-900 dark:text-dark-100">
                     {student.city}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      student.enrollmentStatus === 'ACTIVE'
-                        ? 'bg-success-100 text-success-800 dark:bg-success-900/20 dark:text-success-400'
-                        : 'bg-error-100 text-error-800 dark:bg-error-900/20 dark:text-error-400'
-                    }`}>
-                      {student.enrollmentStatus === 'ACTIVE' ? 'Activo' : 'Inactivo'}
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        student.enrollmentStatus === "ACTIVE"
+                          ? "bg-success-100 text-success-800 dark:bg-success-900/20 dark:text-success-400"
+                          : "bg-error-100 text-error-800 dark:bg-error-900/20 dark:text-error-400"
+                      }`}
+                    >
+                      {student.enrollmentStatus === "ACTIVE"
+                        ? "Activo"
+                        : "Inactivo"}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -294,20 +313,30 @@ const StudentsPage: React.FC = () => {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-black opacity-30" onClick={() => setIsModalOpen(false)}></div>
-            
+            <div
+              className="fixed inset-0 bg-black opacity-30"
+              onClick={() => setIsModalOpen(false)}
+            ></div>
+
             <div className="relative bg-white dark:bg-dark-800 rounded-2xl shadow-xl max-w-2xl w-full p-6">
               <h3 className="text-2xl font-bold mb-6">
-                {editingStudent ? 'Editar Estudiante' : 'Nuevo Estudiante'}
+                {editingStudent ? "Editar Estudiante" : "Nuevo Estudiante"}
               </h3>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Tipo de Documento</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Tipo de Documento
+                    </label>
                     <select
-                      value={formData.documentType || 'CC'}
-                      onChange={(e) => setFormData({ ...formData, documentType: e.target.value })}
+                      value={formData.documentType || "CC"}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          documentType: e.target.value,
+                        })
+                      }
                       className="input w-full"
                       required
                     >
@@ -317,11 +346,18 @@ const StudentsPage: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Número de Documento</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Número de Documento
+                    </label>
                     <input
                       type="text"
-                      value={formData.documentNumber || ''}
-                      onChange={(e) => setFormData({ ...formData, documentNumber: e.target.value })}
+                      value={formData.documentNumber || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          documentNumber: e.target.value,
+                        })
+                      }
                       className="input w-full"
                       required
                     />
@@ -330,21 +366,29 @@ const StudentsPage: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Nombres</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Nombres
+                    </label>
                     <input
                       type="text"
-                      value={formData.firstName || ''}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      value={formData.firstName || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, firstName: e.target.value })
+                      }
                       className="input w-full"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Apellidos</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Apellidos
+                    </label>
                     <input
                       type="text"
-                      value={formData.lastName || ''}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      value={formData.lastName || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, lastName: e.target.value })
+                      }
                       className="input w-full"
                       required
                     />
@@ -353,21 +397,29 @@ const StudentsPage: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Email</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Email
+                    </label>
                     <input
                       type="email"
-                      value={formData.email || ''}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      value={formData.email || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
                       className="input w-full"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Teléfono</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Teléfono
+                    </label>
                     <input
                       type="tel"
-                      value={formData.phone || ''}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      value={formData.phone || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, phone: e.target.value })
+                      }
                       className="input w-full"
                       required
                     />
@@ -376,20 +428,28 @@ const StudentsPage: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Fecha de Nacimiento</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Fecha de Nacimiento
+                    </label>
                     <input
                       type="date"
-                      value={formData.birthDate || ''}
-                      onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+                      value={formData.birthDate || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, birthDate: e.target.value })
+                      }
                       className="input w-full"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Género</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Género
+                    </label>
                     <select
-                      value={formData.gender || 'MALE'}
-                      onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                      value={formData.gender || "MALE"}
+                      onChange={(e) =>
+                        setFormData({ ...formData, gender: e.target.value })
+                      }
                       className="input w-full"
                       required
                     >
@@ -402,20 +462,31 @@ const StudentsPage: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Ciudad</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Ciudad
+                    </label>
                     <input
                       type="text"
-                      value={formData.city || ''}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      value={formData.city || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, city: e.target.value })
+                      }
                       className="input w-full"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Estado</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Estado
+                    </label>
                     <select
-                      value={formData.enrollmentStatus || 'ACTIVE'}
-                      onChange={(e) => setFormData({ ...formData, enrollmentStatus: e.target.value })}
+                      value={formData.enrollmentStatus || "ACTIVE"}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          enrollmentStatus: e.target.value,
+                        })
+                      }
                       className="input w-full"
                     >
                       <option value="ACTIVE">Activo</option>
@@ -425,11 +496,15 @@ const StudentsPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Dirección</label>
+                  <label className="block text-sm font-medium mb-1">
+                    Dirección
+                  </label>
                   <input
                     type="text"
-                    value={formData.address || ''}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    value={formData.address || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, address: e.target.value })
+                    }
                     className="input w-full"
                     required
                   />
@@ -449,7 +524,11 @@ const StudentsPage: React.FC = () => {
                     className="btn-primary"
                     disabled={loading}
                   >
-                    {loading ? 'Guardando...' : (editingStudent ? 'Actualizar' : 'Crear')}
+                    {loading
+                      ? "Guardando..."
+                      : editingStudent
+                        ? "Actualizar"
+                        : "Crear"}
                   </button>
                 </div>
               </form>

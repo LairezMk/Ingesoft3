@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
 import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
+import logoImage from '@/assets/images/logo.png';
 import {
   HomeIcon,
   UserGroupIcon,
@@ -23,6 +24,7 @@ import {
   DocumentTextIcon,
   WrenchScrewdriverIcon,
   CogIcon,
+  UserCircleIcon,
   ArrowLeftOnRectangleIcon,
   Bars3Icon,
   XMarkIcon,
@@ -49,6 +51,7 @@ const navigation: NavItem[] = [
   { name: 'Contratos', href: '/contracts', icon: DocumentTextIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO', 'OFICINA_JURIDICA'] },
   { name: 'Mantenimiento', href: '/maintenance', icon: WrenchScrewdriverIcon, roles: ['ADMIN', 'TECNICO_OPERATIVO', 'OPERARIO_LOGISTICO'] },
   { name: 'Reportes', href: '/reports', icon: ChartBarIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO'] },
+  { name: 'Perfil', href: '/profile', icon: UserCircleIcon },
   { name: 'Configuración', href: '/settings', icon: CogIcon, roles: ['ADMIN'] },
 ];
 
@@ -84,15 +87,19 @@ export const Sidebar: React.FC = () => {
     >
       {/* Header */}
       <div className="flex items-center justify-between h-16 px-4 border-b border-dark-200 dark:border-dark-700">
-        {!sidebarCollapsed && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-center gap-3"
-          >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
-              <span className="text-white font-bold text-lg">LT</span>
-            </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex items-center gap-3"
+        >
+          <div className="w-10 h-10 rounded-xl bg-white ring-1 ring-dark-200 dark:bg-dark-700 dark:ring-dark-600 flex items-center justify-center overflow-hidden shrink-0">
+            <img
+              src={logoImage}
+              alt="Logo Centro Cultural Lucy Tejada"
+              className="w-7 h-7 object-contain"
+            />
+          </div>
+          {!sidebarCollapsed && (
             <div className="flex flex-col">
               <span className="font-display font-semibold text-dark-900 dark:text-white">
                 Lucy Tejada
@@ -101,8 +108,8 @@ export const Sidebar: React.FC = () => {
                 Centro Cultural
               </span>
             </div>
-          </motion.div>
-        )}
+          )}
+        </motion.div>
 
         <button
           onClick={toggleSidebarCollapse}
@@ -164,7 +171,12 @@ export const Sidebar: React.FC = () => {
       <div className="p-3 border-t border-dark-200 dark:border-dark-700">
         {!sidebarCollapsed && user && (
           <div className="flex items-center gap-3 px-3 py-2 mb-2">
-            <div className="avatar-md">
+            <button
+              type="button"
+              onClick={() => navigate('/profile')}
+              className="avatar-md hover:ring-2 hover:ring-primary-500 transition-all"
+              title="Ir a perfil"
+            >
               {user.profile?.photoUrl ? (
                 <img
                   src={user.profile.photoUrl}
@@ -176,11 +188,18 @@ export const Sidebar: React.FC = () => {
                   {user.profile?.firstName?.[0] || user.email[0].toUpperCase()}
                 </span>
               )}
-            </div>
+            </button>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-dark-900 dark:text-white truncate">
-                {user.profile?.firstName} {user.profile?.lastName}
-              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/profile')}
+                className="text-sm font-medium text-dark-900 dark:text-white truncate hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                title="Editar perfil"
+              >
+                {user.profile?.firstName
+                  ? `${user.profile.firstName} ${user.profile?.lastName ?? ''}`.trim()
+                  : user.email}
+              </button>
               <p className="text-xs text-dark-500 dark:text-dark-400 truncate">
                 {user.email}
               </p>

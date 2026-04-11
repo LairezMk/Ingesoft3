@@ -4,8 +4,8 @@
  * ============================================
  */
 
-import apiClient, { ApiResponse } from './api';
-import { mockApi, MOCK_MODE } from './mockApi';
+import apiClient, { ApiResponse } from "./api";
+import { MOCK_MODE, storage } from "./mockApi";
 
 export interface DashboardStats {
   totalStudents: number;
@@ -58,35 +58,243 @@ export interface AttendanceByArea {
   totalSessions: number;
 }
 
+const createLocalResponse = <T>(data: T, message: string): ApiResponse<T> => ({
+  success: true,
+  message,
+  data,
+  timestamp: new Date().toISOString(),
+  path: "/local/dashboard",
+  requestId: `local-${Date.now()}`,
+});
+
+const round = (value: number, decimals = 1) => {
+  const factor = 10 ** decimals;
+  return Math.round(value * factor) / factor;
+};
+
+const getLocalCollections = () => {
+  const students = storage.get<any[]>("students") || [];
+  const teachers = storage.get<any[]>("teachers") || [];
+  const programs = storage.get<any[]>("programs") || [];
+  const enrollments = storage.get<any[]>("enrollments") || [];
+  const reservations = storage.get<any[]>("reservations") || [];
+  const contracts = storage.get<any[]>("contracts") || [];
+  const maintenance = storage.get<any[]>("maintenance_records") || [];
+
+  const hasAnyData =
+    students.length > 0 ||
+    teachers.length > 0 ||
+    programs.length > 0 ||
+    enrollments.length > 0 ||
+    reservations.length > 0 ||
+    contracts.length > 0 ||
+    maintenance.length > 0;
+
+  return {
+    students,
+    teachers,
+    programs,
+    enrollments,
+    reservations,
+    contracts,
+    maintenance,
+    hasAnyData,
+  };
+};
+
+const calculateLocalStats = (): DashboardStats => {
+  const {
+    students,
+    teachers,
+    programs,
+    enrollments,
+    reservations,
+    contracts,
+    maintenance,
+  } = getLocalCollections();
+
+  const activeStudents = students.filter(
+    (student) => student?.enrollmentStatus === "ACTIVE" || student?.status === "ACTIVE",
+  ).length;
+  const activePrograms = programs.filter(
+    (program) => program?.status === "ACTIVE",
+  ).length;
+  const activeEnrollments = enrollments.filter(
+    (enrollment) => enrollment?.status === "ACTIVE",
+  ).length;
+  const attendanceRate =
+    enrollments.length > 0 ? round((activeEnrollments / enrollments.length) * 100) : 0;
+  const upcomingReservations = reservations.filter(
+    (reservation) => reservation?.status === "PENDING",
+  ).length;
+  const pendingContracts = contracts.filter(
+    (contract) => contract?.status === "PENDING",
+  ).length;
+  const maintenanceAlerts = maintenance.filter(
+    (record) => record?.status !== "COMPLETED",
+  ).length;
+
+  return {
+    totalStudents: students.length,
+    activeStudents,
+    totalTeachers: teachers.length,
+    activePrograms,
+    totalEnrollments: enrollments.length,
+    activeEnrollments,
+    attendanceRate,
+    upcomingReservations,
+    pendingContracts,
+    maintenanceAlerts,
+  };
+};
+
+const calculateLocalEnrollmentsByProgram = (): EnrollmentsByProgram[] => {
+  const { enrollments, programs } = getLocalCollections();
+  if (enrollments.length === 0) return [];
+
+  const programAreaMap = new Map<string, string>();
+  programs.forEach((program) => {
+    if (program?.name) {
+      programAreaMap.set(
+        program.name,
+        String(program.area || "GENERAL").toUpperCase().replace(/\s+/g, "_"),
+      );
+    }
+  });
+
+  const counts = new Map<string, number>();
+  enrollments.forEach((enrollment) => {
+    const programName = String(enrollment?.programName || "Sin Programa");
+    counts.set(programName, (counts.get(programName) || 0) + 1);
+  });
+
+  const total = enrollments.length;
+  return [...counts.entries()]
+    .map(([programName, value], index) => ({
+      programId: String(index + 1),
+      programName,
+      area: programAreaMap.get(programName) || "GENERAL",
+      enrollments: value,
+      percentage: total > 0 ? round((value / total) * 100) : 0,
+    }))
+    .sort((a, b) => (b.enrollments || 0) - (a.enrollments || 0));
+};
+
+const calculateLocalGeographicDistribution = (): GeographicDistribution[] => {
+  const { students } = getLocalCollections();
+  if (students.length === 0) return [];
+
+  const cityCounts = new Map<string, number>();
+  students.forEach((student) => {
+    const city = String(student?.city || "Sin ciudad");
+    cityCounts.set(city, (cityCounts.get(city) || 0) + 1);
+  });
+
+  const total = students.length;
+  return [...cityCounts.entries()].map(([city, count]) => ({
+    neighborhood: city,
+    city,
+    count,
+    percentage: total > 0 ? round((count / total) * 100) : 0,
+  }));
+};
+
+const calculateLocalEnrollmentTrend = (months = 12): EnrollmentTrend[] => {
+  const { enrollments } = getLocalCollections();
+  const now = new Date();
+
+  const bucketLabels: string[] = [];
+  const bucketCounts = new Map<string, number>();
+  for (let i = months - 1; i >= 0; i--) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const label = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    bucketLabels.push(label);
+    bucketCounts.set(label, 0);
+  }
+
+  enrollments.forEach((enrollment) => {
+    const rawDate = String(enrollment?.enrollmentDate || "");
+    const date = new Date(rawDate);
+    if (Number.isNaN(date.getTime())) return;
+    const label = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    if (bucketCounts.has(label)) {
+      bucketCounts.set(label, (bucketCounts.get(label) || 0) + 1);
+    }
+  });
+
+  return bucketLabels.map((period) => ({
+    period,
+    count: bucketCounts.get(period) || 0,
+  }));
+};
+
+const calculateLocalAttendanceByArea = (): AttendanceByArea[] => {
+  const { enrollments, programs } = getLocalCollections();
+  if (enrollments.length === 0) return [];
+
+  const programAreaMap = new Map<string, string>();
+  programs.forEach((program) => {
+    if (program?.name) {
+      programAreaMap.set(program.name, String(program.area || "General"));
+    }
+  });
+
+  const areaAggregates = new Map<
+    string,
+    { total: number; active: number }
+  >();
+
+  enrollments.forEach((enrollment) => {
+    const programName = String(enrollment?.programName || "");
+    const area = programAreaMap.get(programName) || "General";
+    const aggregate = areaAggregates.get(area) || { total: 0, active: 0 };
+    aggregate.total += 1;
+    if (enrollment?.status === "ACTIVE") {
+      aggregate.active += 1;
+    }
+    areaAggregates.set(area, aggregate);
+  });
+
+  return [...areaAggregates.entries()].map(([area, aggregate]) => ({
+    area,
+    attendanceRate:
+      aggregate.total > 0 ? round((aggregate.active / aggregate.total) * 100) : 0,
+    totalSessions: aggregate.total * 4,
+  }));
+};
+
 export const dashboardService = {
   /**
    * Obtener estadísticas generales
    */
   getStats: async (): Promise<ApiResponse<DashboardStats>> => {
-    if (MOCK_MODE) {
-      return mockApi.getDashboardStats();
+    const localCollections = getLocalCollections();
+    if (localCollections.hasAnyData || MOCK_MODE) {
+      return createLocalResponse(
+        calculateLocalStats(),
+        "Estadísticas obtenidas desde datos locales",
+      );
     }
-    const response = await apiClient.get<ApiResponse<DashboardStats>>('/dashboard/stats');
+    const response =
+      await apiClient.get<ApiResponse<DashboardStats>>("/dashboard/stats");
     return response.data;
   },
 
   /**
    * Obtener matrículas por programa
    */
-  getEnrollmentsByProgram: async (): Promise<ApiResponse<EnrollmentsByProgram[]>> => {
-    if (MOCK_MODE) {
-      const stats = await mockApi.getDashboardStats();
-      return {
-        success: true,
-        message: 'Datos obtenidos',
-        data: (stats.data as any).programDistribution,
-        timestamp: new Date().toISOString(),
-        path: '/mock',
-        requestId: 'mock',
-      };
+  getEnrollmentsByProgram: async (): Promise<
+    ApiResponse<EnrollmentsByProgram[]>
+  > => {
+    const localCollections = getLocalCollections();
+    if (localCollections.hasAnyData || MOCK_MODE) {
+      return createLocalResponse(
+        calculateLocalEnrollmentsByProgram(),
+        "Matrículas por programa obtenidas desde datos locales",
+      );
     }
     const response = await apiClient.get<ApiResponse<EnrollmentsByProgram[]>>(
-      '/dashboard/enrollments-by-program'
+      "/dashboard/enrollments-by-program",
     );
     return response.data;
   },
@@ -94,24 +302,18 @@ export const dashboardService = {
   /**
    * Obtener distribución geográfica
    */
-  getGeographicDistribution: async (): Promise<ApiResponse<GeographicDistribution[]>> => {
-    if (MOCK_MODE) {
-      return {
-        success: true,
-        message: 'Distribución obtenida',
-        data: [
-          { neighborhood: 'Centro', city: 'Pereira', count: 320, percentage: 25.7 },
-          { neighborhood: 'Cuba', city: 'Pereira', count: 285, percentage: 22.8 },
-          { neighborhood: 'El Poblado', city: 'Pereira', count: 198, percentage: 15.9 },
-          { neighborhood: 'Otros', city: 'Pereira', count: 444, percentage: 35.6 },
-        ],
-        timestamp: new Date().toISOString(),
-        path: '/mock',
-        requestId: 'mock',
-      };
+  getGeographicDistribution: async (): Promise<
+    ApiResponse<GeographicDistribution[]>
+  > => {
+    const localCollections = getLocalCollections();
+    if (localCollections.hasAnyData || MOCK_MODE) {
+      return createLocalResponse(
+        calculateLocalGeographicDistribution(),
+        "Distribución geográfica obtenida desde datos locales",
+      );
     }
     const response = await apiClient.get<ApiResponse<GeographicDistribution[]>>(
-      '/dashboard/geographic-distribution'
+      "/dashboard/geographic-distribution",
     );
     return response.data;
   },
@@ -119,26 +321,27 @@ export const dashboardService = {
   /**
    * Obtener análisis de deserción
    */
-  getDropoutAnalysis: async (year?: number): Promise<ApiResponse<DropoutAnalysis[]>> => {
-    if (MOCK_MODE) {
-      return {
-        success: true,
-        message: 'Análisis obtenido',
-        data: [
-          { period: '2024-Q1', totalEnrollments: 950, withdrawals: 45, dropoutRate: 4.7 },
-          { period: '2024-Q2', totalEnrollments: 1020, withdrawals: 38, dropoutRate: 3.7 },
-          { period: '2024-Q3', totalEnrollments: 1100, withdrawals: 42, dropoutRate: 3.8 },
-          { period: '2024-Q4', totalEnrollments: 1180, withdrawals: 35, dropoutRate: 3.0 },
-        ],
-        timestamp: new Date().toISOString(),
-        path: '/mock',
-        requestId: 'mock',
-      };
+  getDropoutAnalysis: async (
+    year?: number,
+  ): Promise<ApiResponse<DropoutAnalysis[]>> => {
+    const localCollections = getLocalCollections();
+    if (localCollections.hasAnyData || MOCK_MODE) {
+      const enrollments = localCollections.enrollments || [];
+      const period = year ? `${year}` : `${new Date().getFullYear()}`;
+      const totalEnrollments = enrollments.length;
+      const withdrawals = enrollments.filter((item) => item?.status === "CANCELLED").length;
+      const dropoutRate =
+        totalEnrollments > 0 ? round((withdrawals / totalEnrollments) * 100) : 0;
+
+      return createLocalResponse(
+        [{ period, totalEnrollments, withdrawals, dropoutRate }],
+        "Análisis de deserción obtenido desde datos locales",
+      );
     }
     const params = year ? { year } : {};
     const response = await apiClient.get<ApiResponse<DropoutAnalysis[]>>(
-      '/dashboard/dropout-analysis',
-      { params }
+      "/dashboard/dropout-analysis",
+      { params },
     );
     return response.data;
   },
@@ -146,21 +349,19 @@ export const dashboardService = {
   /**
    * Obtener tendencia de matrículas
    */
-  getEnrollmentTrend: async (months = 12): Promise<ApiResponse<EnrollmentTrend[]>> => {
-    if (MOCK_MODE) {
-      const stats = await mockApi.getDashboardStats();
-      return {
-        success: true,
-        message: 'Tendencia obtenida',
-        data: (stats.data as any).enrollmentTrend,
-        timestamp: new Date().toISOString(),
-        path: '/mock',
-        requestId: 'mock',
-      };
+  getEnrollmentTrend: async (
+    months = 12,
+  ): Promise<ApiResponse<EnrollmentTrend[]>> => {
+    const localCollections = getLocalCollections();
+    if (localCollections.hasAnyData || MOCK_MODE) {
+      return createLocalResponse(
+        calculateLocalEnrollmentTrend(months),
+        "Tendencia de matrículas obtenida desde datos locales",
+      );
     }
     const response = await apiClient.get<ApiResponse<EnrollmentTrend[]>>(
-      '/dashboard/enrollment-trend',
-      { params: { months } }
+      "/dashboard/enrollment-trend",
+      { params: { months } },
     );
     return response.data;
   },
@@ -169,23 +370,15 @@ export const dashboardService = {
    * Obtener asistencia por área
    */
   getAttendanceByArea: async (): Promise<ApiResponse<AttendanceByArea[]>> => {
-    if (MOCK_MODE) {
-      return {
-        success: true,
-        message: 'Asistencia obtenida',
-        data: [
-          { area: 'Danza', attendanceRate: 92.5, totalSessions: 240 },
-          { area: 'Música', attendanceRate: 88.3, totalSessions: 320 },
-          { area: 'Teatro', attendanceRate: 85.7, totalSessions: 180 },
-          { area: 'Artes Visuales', attendanceRate: 90.2, totalSessions: 160 },
-        ],
-        timestamp: new Date().toISOString(),
-        path: '/mock',
-        requestId: 'mock',
-      };
+    const localCollections = getLocalCollections();
+    if (localCollections.hasAnyData || MOCK_MODE) {
+      return createLocalResponse(
+        calculateLocalAttendanceByArea(),
+        "Asistencia por área obtenida desde datos locales",
+      );
     }
     const response = await apiClient.get<ApiResponse<AttendanceByArea[]>>(
-      '/dashboard/attendance-by-area'
+      "/dashboard/attendance-by-area",
     );
     return response.data;
   },
