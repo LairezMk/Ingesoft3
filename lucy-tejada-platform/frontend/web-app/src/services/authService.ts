@@ -66,7 +66,8 @@ export const authService = {
    */
   getCurrentUser: async (): Promise<ApiResponse<LoginResponse["user"]>> => {
     if (MOCK_MODE) {
-      return mockApi.getCurrentUser();
+      const response = await mockApi.getCurrentUser();
+      return response as unknown as ApiResponse<LoginResponse['user']>;
     }
     const response =
       await apiClient.get<ApiResponse<LoginResponse["user"]>>("/auth/me");

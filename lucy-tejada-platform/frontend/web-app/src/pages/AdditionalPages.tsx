@@ -50,7 +50,7 @@ export const VenuesPage: React.FC = () => {
   const [venues, setVenues] = useState<Venue[]>(() => {
     const data = storage.get<Venue[]>("venues") || [];
     if (data.length === 0) {
-      const initial = [
+      const initial: Venue[] = [
         {
           id: "1",
           name: "Auditorio Principal",
@@ -979,7 +979,7 @@ Fecha de elaboración: ${fields.createdAt}.
     city: "Pereira",
     supervisor: "Coordinación Administrativa",
     object: contractTemplates[contractType].objectHint,
-    status: "PENDING",
+    status: "PENDING" as ContractStatus,
     createdAt: today,
   });
 
@@ -1013,7 +1013,7 @@ Fecha de elaboración: ${fields.createdAt}.
         specificFieldValue: "Danza Contemporánea",
         object:
           "Prestación de servicios docentes para la formación artística en danza contemporánea y montaje escénico.",
-        status: "APPROVED",
+        status: "APPROVED" as ContractStatus,
         createdAt: "2024-01-15",
         content: "",
       },
@@ -1029,7 +1029,7 @@ Fecha de elaboración: ${fields.createdAt}.
         specificFieldValue: "Apoyo jurídico y contractual",
         object:
           "Prestación de servicios profesionales para acompañamiento jurídico en procesos contractuales institucionales.",
-        status: "PENDING",
+        status: "PENDING" as ContractStatus,
         createdAt: "2024-03-20",
         content: "",
       },

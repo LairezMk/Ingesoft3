@@ -91,24 +91,31 @@ export const LoginPage: React.FC = () => {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
-      const response = await authService.login(data);
+      // Simular delay de red
+      await new Promise((resolve) => setTimeout(resolve, 800));
 
-      if (response.success && response.data) {
-        login(
-          {
-            id: response.data.user.id,
-            email: response.data.user.email,
-            role: response.data.user.role,
-          },
-          response.data.accessToken,
-          response.data.refreshToken
-        );
-
-        toast.success('¡Bienvenido al Centro Cultural Lucy Tejada!');
-        navigate('/dashboard');
+      // Solo validar que el correo tenga "@", saltar el backend
+      if (!data.email.includes('@')) {
+        toast.error('El correo debe contener un @');
+        setIsLoading(false);
+        return;
       }
+
+      // Mock login
+      login(
+        {
+          id: 'mock-user-123',
+          email: data.email,
+          role: 'ADMIN',
+        },
+        'mock-access-token',
+        'mock-refresh-token'
+      );
+
+      toast.success('¡Bienvenido al Centro Cultural Lucy Tejada!');
+      navigate('/dashboard');
     } catch (error) {
-      toast.error(getErrorMessage(error));
+      toast.error('Error inesperado');
     } finally {
       setIsLoading(false);
     }
@@ -216,33 +223,24 @@ export const LoginPage: React.FC = () => {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <Input
               label="Correo electrónico"
-              type="email"
+              type="text"
               placeholder="tu@correo.com"
               icon={<EnvelopeIcon className="w-5 h-5" />}
               error={errors.email?.message}
               {...register('email', {
                 required: 'El correo es requerido',
-                pattern: {
-                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: 'Correo electrónico inválido',
-                },
+                validate: (val) => val.includes('@') || 'El correo debe contener un @',
               })}
             />
 
             <div className="relative">
               <Input
-                label="Contraseña"
+                label="Contraseña (Opcional)"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 icon={<LockClosedIcon className="w-5 h-5" />}
                 error={errors.password?.message}
-                {...register('password', {
-                  required: 'La contraseña es requerida',
-                  minLength: {
-                    value: 8,
-                    message: 'Mínimo 8 caracteres',
-                  },
-                })}
+                {...register('password')}
               />
               <button
                 type="button"

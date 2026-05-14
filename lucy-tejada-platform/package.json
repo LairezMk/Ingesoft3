@@ -67,5 +67,8 @@
     "url": "https://github.com/centro-cultural-lucy-tejada/plataforma-gestion"
   },
   "author": "Centro Cultural Lucy Tejada - Alcaldía de Pereira",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@dataconnect/generated": "file:src/dataconnect-generated"
+  }
 }
