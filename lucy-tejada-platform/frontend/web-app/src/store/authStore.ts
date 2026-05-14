@@ -7,11 +7,12 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { type AppRole, normalizeRole } from '@/utils/rbac';
 
 export interface User {
   id: string;
   email: string;
-  role: string;
+  role: AppRole;
   profile?: {
     firstName: string;
     lastName: string;
@@ -52,14 +53,25 @@ export const useAuthStore = create<AuthState>()(
       isLoading: true,
 
       setUser: (user) =>
-        set({ user, isAuthenticated: !!user }),
+        set({
+          user: user
+            ? {
+                ...user,
+                role: normalizeRole(user.role) ?? 'VISITANTE',
+              }
+            : null,
+          isAuthenticated: !!user,
+        }),
 
       setTokens: (accessToken, refreshToken) =>
         set({ accessToken, refreshToken }),
 
       login: (user, accessToken, refreshToken) =>
         set({
-          user,
+          user: {
+            ...user,
+            role: normalizeRole(user.role) ?? 'VISITANTE',
+          },
           accessToken,
           refreshToken,
           isAuthenticated: true,

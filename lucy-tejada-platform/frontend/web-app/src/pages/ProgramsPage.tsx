@@ -3,6 +3,9 @@
  */
 import React, { useState, useEffect } from "react";
 import { storage } from "@/services/mockApi";
+import { useAuthStore } from "@/store/authStore";
+import { normalizeRole } from "@/utils/rbac";
+import toast from "react-hot-toast";
 import {
   PlusIcon,
   PencilIcon,
@@ -19,7 +22,16 @@ interface Program {
   description: string;
   status: string;
   maxStudents: number;
+  teacherId?: string;
+  teacherName?: string;
   createdAt: string;
+}
+
+interface TeacherOption {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
 }
 
 const ProgramsPage: React.FC = () => {
@@ -28,12 +40,28 @@ const ProgramsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing] = useState<Program | null>(null);
   const [formData, setFormData] = useState<Partial<Program>>({});
+  const [teacherOptions, setTeacherOptions] = useState<TeacherOption[]>([]);
+  const [isEnrollmentModalOpen, setIsEnrollmentModalOpen] = useState(false);
+  const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
+  const [registrationForm, setRegistrationForm] = useState({
+    firstName: "",
+    lastName: "",
+    documentNumber: "",
+    email: "",
+    phone: "",
+  });
+  const { user } = useAuthStore();
+  const role = normalizeRole(user?.role);
+  const canManagePrograms = role === "ADMIN" || role === "DOCENTE";
+  const canRequestEnrollment = role === "ESTUDIANTE" || role === "VISITANTE";
 
   const areas = ["Danza", "Música", "Teatro", "Artes Visuales"];
   const levels = ["Básico", "Intermedio", "Avanzado"];
 
   useEffect(() => {
     loadPrograms();
+    const teachers = storage.get<TeacherOption[]>("teachers") || [];
+    setTeacherOptions(teachers);
   }, []);
 
   const loadPrograms = () => {
@@ -49,6 +77,8 @@ const ProgramsPage: React.FC = () => {
           description: "Introducción al ballet",
           status: "ACTIVE",
           maxStudents: 20,
+          teacherId: "1",
+          teacherName: "Docente 1",
           createdAt: new Date().toISOString(),
         },
         {
@@ -60,6 +90,8 @@ const ProgramsPage: React.FC = () => {
           description: "Técnicas modernas de guitarra",
           status: "ACTIVE",
           maxStudents: 15,
+          teacherId: "2",
+          teacherName: "Docente 2",
           createdAt: new Date().toISOString(),
         },
         {
@@ -71,6 +103,8 @@ const ProgramsPage: React.FC = () => {
           description: "Técnicas avanzadas de actuación",
           status: "ACTIVE",
           maxStudents: 25,
+          teacherId: "3",
+          teacherName: "Docente 3",
           createdAt: new Date().toISOString(),
         },
         {
@@ -82,6 +116,8 @@ const ProgramsPage: React.FC = () => {
           description: "Fundamentos de pintura",
           status: "ACTIVE",
           maxStudents: 12,
+          teacherId: "4",
+          teacherName: "Docente 4",
           createdAt: new Date().toISOString(),
         },
       ];
@@ -98,16 +134,28 @@ const ProgramsPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const teacherNameForDocente =
+      user?.profile?.firstName && user?.profile?.lastName
+        ? `${user.profile.firstName} ${user.profile.lastName}`
+        : user?.email || "Docente";
+    const normalizedFormData =
+      role === "DOCENTE"
+        ? {
+            ...formData,
+            teacherId: user?.id || "DOCENTE",
+            teacherName: teacherNameForDocente,
+          }
+        : formData;
     let updated;
     if (editing) {
       updated = programs.map((p) =>
-        p.id === editing.id ? { ...p, ...formData } : p,
+        p.id === editing.id ? { ...p, ...normalizedFormData } : p,
       );
     } else {
       updated = [
         ...programs,
         {
-          ...formData,
+          ...normalizedFormData,
           id: String(programs.length + 1),
           createdAt: new Date().toISOString(),
         } as Program,
@@ -116,6 +164,78 @@ const ProgramsPage: React.FC = () => {
     storage.set("programs", updated);
     setIsModalOpen(false);
     loadPrograms();
+  };
+
+  const createEnrollmentRequest = (studentName: string, program: Program, requestedByEmail?: string) => {
+    const enrollments = storage.get<any[]>("enrollments") || [];
+    const newEnrollment = {
+      id: String(Date.now()),
+      studentId: requestedByEmail || String(Date.now()),
+      studentName,
+      groupId: "",
+      groupName: "Pendiente de asignación",
+      programName: program.name,
+      enrollmentDate: new Date().toISOString().split("T")[0],
+      status: "PENDING",
+      requestedByEmail: requestedByEmail || "",
+    };
+    storage.set("enrollments", [newEnrollment, ...enrollments]);
+  };
+
+  const handleStudentEnrollmentRequest = (program: Program) => {
+    if (!user) return;
+    const studentName =
+      user.profile?.firstName && user.profile?.lastName
+        ? `${user.profile.firstName} ${user.profile.lastName}`
+        : user.email;
+    createEnrollmentRequest(studentName, program, user.email);
+    toast.success("Solicitud de matrícula enviada.");
+  };
+
+  const handleOpenVisitorEnrollment = (program: Program) => {
+    setSelectedProgram(program);
+    setRegistrationForm({
+      firstName: "",
+      lastName: "",
+      documentNumber: "",
+      email: "",
+      phone: "",
+    });
+    setIsEnrollmentModalOpen(true);
+  };
+
+  const handleVisitorEnrollmentRequest = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!selectedProgram) return;
+    if (!registrationForm.firstName.trim() || !registrationForm.lastName.trim() || !registrationForm.email.trim()) {
+      toast.error("Completa los datos básicos para registrarte como estudiante.");
+      return;
+    }
+
+    const students = storage.get<any[]>("students") || [];
+    const newStudent = {
+      id: String(Date.now()),
+      documentType: "CC",
+      documentNumber: registrationForm.documentNumber.trim() || String(Date.now()).slice(-8),
+      firstName: registrationForm.firstName.trim(),
+      lastName: registrationForm.lastName.trim(),
+      email: registrationForm.email.trim(),
+      phone: registrationForm.phone.trim(),
+      birthDate: "2005-01-01",
+      gender: "MALE",
+      city: "Pereira",
+      address: "Sin dirección registrada",
+      enrollmentStatus: "ACTIVE",
+      createdAt: new Date().toISOString(),
+    };
+    storage.set("students", [newStudent, ...students]);
+    createEnrollmentRequest(
+      `${newStudent.firstName} ${newStudent.lastName}`,
+      selectedProgram,
+      newStudent.email,
+    );
+    setIsEnrollmentModalOpen(false);
+    toast.success("Registro básico completado. Tu solicitud de matrícula quedó pendiente.");
   };
 
   const handleDelete = (id: string) => {
@@ -135,22 +255,28 @@ const ProgramsPage: React.FC = () => {
           <h1 className="text-3xl font-bold">Programas Formativos</h1>
           <p className="text-dark-500 mt-1">Gestión de programas artísticos</p>
         </div>
-        <button
-          onClick={() => {
-            setEditing(null);
-            setFormData({
-              status: "ACTIVE",
-              level: "Básico",
-              duration: 12,
-              maxStudents: 20,
-            });
-            setIsModalOpen(true);
-          }}
-          className="btn-primary flex items-center gap-2"
-        >
-          <PlusIcon className="w-5 h-5" />
-          Nuevo Programa
-        </button>
+        {canManagePrograms && (
+          <button
+            onClick={() => {
+              setEditing(null);
+              setFormData({
+                status: "ACTIVE",
+                level: "Básico",
+                duration: 12,
+                maxStudents: 20,
+                teacherId: teacherOptions[0]?.id || "",
+                teacherName: teacherOptions[0]
+                  ? `${teacherOptions[0].firstName} ${teacherOptions[0].lastName}`
+                  : "",
+              });
+              setIsModalOpen(true);
+            }}
+            className="btn-primary flex items-center gap-2"
+          >
+            <PlusIcon className="w-5 h-5" />
+            Nuevo Programa
+          </button>
+        )}
       </div>
 
       <div className="card p-4">
@@ -195,27 +321,32 @@ const ProgramsPage: React.FC = () => {
                   </span>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setEditing(program);
-                    setFormData(program);
-                    setIsModalOpen(true);
-                  }}
-                  className="text-primary-600 hover:text-primary-900"
-                >
-                  <PencilIcon className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => handleDelete(program.id)}
-                  className="text-error-600 hover:text-error-900"
-                >
-                  <TrashIcon className="w-5 h-5" />
-                </button>
-              </div>
+              {canManagePrograms && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setEditing(program);
+                      setFormData(program);
+                      setIsModalOpen(true);
+                    }}
+                    className="text-primary-600 hover:text-primary-900"
+                  >
+                    <PencilIcon className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(program.id)}
+                    className="text-error-600 hover:text-error-900"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
             </div>
             <p className="text-sm text-dark-600 dark:text-dark-300 mb-4">
               {program.description}
+            </p>
+            <p className="text-sm text-dark-500 mb-3">
+              Docente asignado: {program.teacherName || "Pendiente"}
             </p>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
@@ -229,11 +360,30 @@ const ProgramsPage: React.FC = () => {
                 </p>
               </div>
             </div>
+            {!canManagePrograms && canRequestEnrollment && (
+              <div className="mt-4">
+                {role === "ESTUDIANTE" ? (
+                  <button
+                    className="btn-primary w-full"
+                    onClick={() => handleStudentEnrollmentRequest(program)}
+                  >
+                    Inscribirme en este curso
+                  </button>
+                ) : (
+                  <button
+                    className="btn-primary w-full"
+                    onClick={() => handleOpenVisitorEnrollment(program)}
+                  >
+                    Solicitar matrícula
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
 
-      {isModalOpen && (
+      {canManagePrograms && isModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
             <div
@@ -354,6 +504,43 @@ const ProgramsPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">
+                    Docente asignado
+                  </label>
+                  {role === "ADMIN" ? (
+                    <select
+                      value={formData.teacherId || ""}
+                      onChange={(e) => {
+                        const teacher = teacherOptions.find((t) => t.id === e.target.value);
+                        setFormData({
+                          ...formData,
+                          teacherId: e.target.value,
+                          teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : "",
+                        });
+                      }}
+                      className="input w-full"
+                    >
+                      <option value="">Seleccionar docente...</option>
+                      {teacherOptions.map((teacher) => (
+                        <option key={teacher.id} value={teacher.id}>
+                          {teacher.firstName} {teacher.lastName}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      className="input w-full"
+                      value={
+                        user?.profile?.firstName && user?.profile?.lastName
+                          ? `${user.profile.firstName} ${user.profile.lastName}`
+                          : user?.email || "Docente"
+                      }
+                      disabled
+                    />
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
                     Estado
                   </label>
                   <select
@@ -377,6 +564,78 @@ const ProgramsPage: React.FC = () => {
                   </button>
                   <button type="submit" className="btn-primary">
                     {editing ? "Actualizar" : "Crear"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+      {isEnrollmentModalOpen && selectedProgram && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4">
+            <div className="fixed inset-0 bg-black opacity-30" onClick={() => setIsEnrollmentModalOpen(false)} />
+            <div className="relative bg-white dark:bg-dark-800 rounded-2xl shadow-xl max-w-xl w-full p-6">
+              <h3 className="text-2xl font-bold mb-2">Registro básico como estudiante</h3>
+              <p className="text-sm text-dark-500 mb-4">
+                Curso solicitado: {selectedProgram.name}
+              </p>
+              <form onSubmit={handleVisitorEnrollmentRequest} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <input
+                    className="input w-full"
+                    placeholder="Nombre"
+                    value={registrationForm.firstName}
+                    onChange={(event) =>
+                      setRegistrationForm((previous) => ({ ...previous, firstName: event.target.value }))
+                    }
+                    required
+                  />
+                  <input
+                    className="input w-full"
+                    placeholder="Apellido"
+                    value={registrationForm.lastName}
+                    onChange={(event) =>
+                      setRegistrationForm((previous) => ({ ...previous, lastName: event.target.value }))
+                    }
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <input
+                    className="input w-full"
+                    placeholder="Documento"
+                    value={registrationForm.documentNumber}
+                    onChange={(event) =>
+                      setRegistrationForm((previous) => ({ ...previous, documentNumber: event.target.value }))
+                    }
+                  />
+                  <input
+                    type="tel"
+                    className="input w-full"
+                    placeholder="Teléfono"
+                    value={registrationForm.phone}
+                    onChange={(event) =>
+                      setRegistrationForm((previous) => ({ ...previous, phone: event.target.value }))
+                    }
+                  />
+                </div>
+                <input
+                  type="email"
+                  className="input w-full"
+                  placeholder="Correo electrónico"
+                  value={registrationForm.email}
+                  onChange={(event) =>
+                    setRegistrationForm((previous) => ({ ...previous, email: event.target.value }))
+                  }
+                  required
+                />
+                <div className="flex justify-end gap-3">
+                  <button type="button" onClick={() => setIsEnrollmentModalOpen(false)} className="btn-secondary">
+                    Cancelar
+                  </button>
+                  <button type="submit" className="btn-primary">
+                    Solicitar matrícula
                   </button>
                 </div>
               </form>

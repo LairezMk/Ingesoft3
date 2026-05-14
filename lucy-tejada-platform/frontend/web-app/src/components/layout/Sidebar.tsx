@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
 import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
+import { type AppRole, hasRoleAccess } from '@/utils/rbac';
 import logoImage from '@/assets/images/logo.png';
 import {
   HomeIcon,
@@ -34,25 +35,25 @@ interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  roles?: string[];
+  roles?: AppRole[];
 }
 
 const navigation: NavItem[] = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  { name: 'Estudiantes', href: '/students', icon: UserGroupIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO', 'DOCENTE'] },
-  { name: 'Docentes', href: '/teachers', icon: AcademicCapIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO'] },
-  { name: 'Programas', href: '/programs', icon: BookOpenIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO', 'DOCENTE'] },
-  { name: 'Grupos', href: '/groups', icon: CalendarIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO', 'DOCENTE'] },
-  { name: 'Matrículas', href: '/enrollments', icon: ClipboardDocumentCheckIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO'] },
-  { name: 'Asistencia', href: '/attendance', icon: CalendarDaysIcon, roles: ['ADMIN', 'DOCENTE'] },
-  { name: 'Evaluaciones', href: '/evaluations', icon: ChartBarIcon, roles: ['ADMIN', 'DOCENTE'] },
-  { name: 'Escenarios', href: '/venues', icon: BuildingOfficeIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO', 'TECNICO_OPERATIVO'] },
-  { name: 'Reservas', href: '/reservations', icon: CalendarDaysIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO'] },
-  { name: 'Contratos', href: '/contracts', icon: DocumentTextIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO', 'OFICINA_JURIDICA'] },
-  { name: 'Mantenimiento', href: '/maintenance', icon: WrenchScrewdriverIcon, roles: ['ADMIN', 'TECNICO_OPERATIVO', 'OPERARIO_LOGISTICO'] },
-  { name: 'Reportes', href: '/reports', icon: ChartBarIcon, roles: ['ADMIN', 'AUXILIAR_ADMINISTRATIVO'] },
-  { name: 'Perfil', href: '/profile', icon: UserCircleIcon },
-  { name: 'Configuración', href: '/settings', icon: CogIcon, roles: ['ADMIN'] },
+  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE'] },
+  { name: 'Estudiantes', href: '/students', icon: UserGroupIcon, roles: ['ADMIN', 'DOCENTE'] },
+  { name: 'Docentes', href: '/teachers', icon: AcademicCapIcon, roles: ['ADMIN'] },
+  { name: 'Programas', href: '/programs', icon: BookOpenIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE'] },
+  { name: 'Grupos', href: '/groups', icon: CalendarIcon, roles: ['ADMIN', 'DOCENTE'] },
+  { name: 'Matrículas', href: '/enrollments', icon: ClipboardDocumentCheckIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE'] },
+  { name: 'Asistencia', href: '/attendance', icon: CalendarDaysIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE'] },
+  { name: 'Evaluaciones', href: '/evaluations', icon: ChartBarIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE'] },
+  { name: 'Escenarios', href: '/venues', icon: BuildingOfficeIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE'] },
+  { name: 'Reservas', href: '/reservations', icon: CalendarDaysIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE'] },
+  { name: 'Contratos', href: '/contracts', icon: DocumentTextIcon, roles: ['ADMIN'] },
+  { name: 'Mantenimiento', href: '/maintenance', icon: WrenchScrewdriverIcon, roles: ['ADMIN'] },
+  { name: 'Reportes', href: '/reports', icon: ChartBarIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE'] },
+  { name: 'Perfil', href: '/profile', icon: UserCircleIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE'] },
+  { name: 'Configuración', href: '/settings', icon: CogIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE'] },
 ];
 
 export const Sidebar: React.FC = () => {
@@ -66,7 +67,7 @@ export const Sidebar: React.FC = () => {
   };
 
   const filteredNavigation = navigation.filter(
-    (item) => !item.roles || item.roles.includes(user?.role || '')
+    (item) => !item.roles || hasRoleAccess(user?.role, item.roles)
   );
 
   return (

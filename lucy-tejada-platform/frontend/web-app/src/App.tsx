@@ -11,6 +11,7 @@ import { Toaster } from 'react-hot-toast';
 import { router } from './router';
 import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
+import { normalizeRole } from '@/utils/rbac';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -25,7 +26,7 @@ const queryClient = new QueryClient({
 
 export const App: React.FC = () => {
   const { darkMode, setDarkMode, theme, setTheme } = useUIStore();
-  const { setLoading } = useAuthStore();
+  const { user, setUser, setLoading } = useAuthStore();
 
   // Initialize dark mode from localStorage
   useEffect(() => {
@@ -51,11 +52,17 @@ export const App: React.FC = () => {
 
     // Set loading to false after initial check
     const timer = setTimeout(() => {
+      if (user) {
+        const normalizedRole = normalizeRole(user.role);
+        if (normalizedRole && normalizedRole !== user.role) {
+          setUser({ ...user, role: normalizedRole });
+        }
+      }
       setLoading(false);
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [setDarkMode, setLoading, setTheme]);
+  }, [setDarkMode, setLoading, setTheme, setUser, user]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);

@@ -10,6 +10,7 @@ import { clsx } from 'clsx';
 import { useNavigate } from 'react-router-dom';
 import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
+import { getRoleLabel } from '@/utils/rbac';
 import {
   Bars3Icon,
   MagnifyingGlassIcon,
@@ -119,10 +120,7 @@ export const Header: React.FC = () => {
                   : user?.email}
               </p>
               <p className="text-xs text-dark-500 dark:text-dark-400">
-                {user?.role === 'ADMIN' ? 'Administrador' :
-                 user?.role === 'DOCENTE' ? 'Docente' :
-                 user?.role === 'ESTUDIANTE' ? 'Estudiante' :
-                 user?.role}
+                {getRoleLabel(user?.role)}
               </p>
             </button>
           </div>

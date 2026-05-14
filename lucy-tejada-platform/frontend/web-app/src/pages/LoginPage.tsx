@@ -12,10 +12,9 @@ import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useAuthStore } from '@/store/authStore';
-import { authService } from '@/services/authService';
-import { getErrorMessage } from '@/services/api';
 import lucyTejadaBackground from '@/assets/images/LUCY-TEJADA.jpeg';
 import logoImage from '@/assets/images/logo.png';
+import { type AppRole, getDefaultRouteForRole, getRoleLabel } from '@/utils/rbac';
 import {
   EnvelopeIcon,
   LockClosedIcon,
@@ -29,6 +28,7 @@ interface LoginFormData {
   email: string;
   password: string;
   rememberMe: boolean;
+  role: AppRole;
 }
 
 const TheaterMaskIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -85,6 +85,7 @@ export const LoginPage: React.FC = () => {
       email: '',
       password: '',
       rememberMe: false,
+      role: 'ADMIN',
     },
   });
 
@@ -102,18 +103,30 @@ export const LoginPage: React.FC = () => {
       }
 
       // Mock login
+      const role = data.role;
       login(
         {
           id: 'mock-user-123',
           email: data.email,
-          role: 'ADMIN',
+          role,
+          profile: {
+            firstName:
+              role === 'ADMIN'
+                ? 'Administrador'
+                : role === 'DOCENTE'
+                  ? 'Docente'
+                  : role === 'ESTUDIANTE'
+                    ? 'Estudiante'
+                    : 'Visitante',
+            lastName: 'Lucy Tejada',
+          },
         },
         'mock-access-token',
         'mock-refresh-token'
       );
 
-      toast.success('¡Bienvenido al Centro Cultural Lucy Tejada!');
-      navigate('/dashboard');
+      toast.success(`¡Bienvenido! Rol activo: ${getRoleLabel(role)}`);
+      navigate(getDefaultRouteForRole(role));
     } catch (error) {
       toast.error('Error inesperado');
     } finally {
@@ -253,6 +266,21 @@ export const LoginPage: React.FC = () => {
                   <EyeIcon className="w-5 h-5" />
                 )}
               </button>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1 text-dark-700 dark:text-dark-200">
+                Ingresar como
+              </label>
+              <select
+                className="input w-full"
+                {...register('role', { required: true })}
+              >
+                <option value="ADMIN">Administrador</option>
+                <option value="DOCENTE">Docente</option>
+                <option value="ESTUDIANTE">Estudiante</option>
+                <option value="VISITANTE">Visitante</option>
+              </select>
             </div>
 
             <div className="flex items-center justify-between">

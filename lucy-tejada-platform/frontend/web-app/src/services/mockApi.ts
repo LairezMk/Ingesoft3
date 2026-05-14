@@ -84,13 +84,22 @@ export class MockApiClient {
   // Mock de Auth
   async login(email: string, password: string) {
     await delay();
+    const normalizedEmail = email.toLowerCase();
+    const inferredRole =
+      normalizedEmail.includes("docente")
+        ? "DOCENTE"
+        : normalizedEmail.includes("estudiante")
+          ? "ESTUDIANTE"
+          : normalizedEmail.includes("visitante")
+            ? "VISITANTE"
+            : "ADMIN";
 
     // Usuario demo
     const mockUser = {
       id: "1",
       email,
       name: "Usuario Demo",
-      role: "ADMIN",
+      role: inferredRole,
       permissions: ["*"],
     };
 

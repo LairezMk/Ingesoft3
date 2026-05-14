@@ -25,6 +25,8 @@ import {
 } from 'recharts';
 import { StatCard } from '@/components/cards/StatCard';
 import { dashboardService } from '@/services/dashboardService';
+import { useAuthStore } from '@/store/authStore';
+import { hasRoleAccess, normalizeRole, type AppRole } from '@/utils/rbac';
 import {
   UserGroupIcon,
   AcademicCapIcon,
@@ -39,6 +41,8 @@ import {
 const COLORS = ['#8B5CF6', '#F97316', '#10B981', '#06B6D4', '#6366F1', '#F43F5E'];
 
 export const DashboardPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const role = normalizeRole(user?.role);
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: () => dashboardService.getStats(),
@@ -92,6 +96,20 @@ export const DashboardPage: React.FC = () => {
     { area: 'Teatro', attendanceRate: 85 },
     { area: 'Artes Visuales', attendanceRate: 90 },
   ];
+
+  const quickActions: Array<{
+    icon: string;
+    label: string;
+    href: string;
+    roles: AppRole[];
+  }> = [
+    { icon: '👤', label: 'Nuevo Estudiante', href: '/students', roles: ['ADMIN', 'DOCENTE'] },
+    { icon: '📝', label: 'Nueva Matrícula', href: '/enrollments', roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE'] },
+    { icon: '📅', label: 'Nueva Reserva', href: '/reservations', roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE'] },
+    { icon: '📊', label: 'Generar Reporte', href: '/reports', roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE'] },
+  ];
+
+  const visibleQuickActions = quickActions.filter((action) => hasRoleAccess(role, action.roles));
 
   return (
     <div className="space-y-8">
@@ -334,12 +352,7 @@ export const DashboardPage: React.FC = () => {
           Acciones Rápidas
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { icon: '👤', label: 'Nuevo Estudiante', href: '/students' },
-            { icon: '📝', label: 'Nueva Matrícula', href: '/enrollments' },
-            { icon: '📅', label: 'Nueva Reserva', href: '/reservations' },
-            { icon: '📊', label: 'Generar Reporte', href: '/reports' },
-          ].map((action, index) => (
+          {visibleQuickActions.map((action, index) => (
             <Link
               key={index}
               to={action.href}

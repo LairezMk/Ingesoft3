@@ -8,6 +8,7 @@ import React, { Suspense, lazy } from 'react';
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import MainLayout from '@/components/layout/MainLayout';
+import { type AppRole, getDefaultRouteForRole, hasRoleAccess } from '@/utils/rbac';
 
 // Lazy load pages
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
@@ -41,6 +42,17 @@ const PageLoader: React.FC = () => (
   </div>
 );
 
+const RoleGuard: React.FC<{ allowedRoles: AppRole[]; children: React.ReactElement }> = ({
+  allowedRoles,
+  children,
+}) => {
+  const { user } = useAuthStore();
+  if (!hasRoleAccess(user?.role, allowedRoles)) {
+    return <Navigate to={getDefaultRouteForRole(user?.role)} replace />;
+  }
+  return children;
+};
+
 // Protected Route Component
 const ProtectedRoute: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -58,17 +70,22 @@ const ProtectedRoute: React.FC = () => {
 
 // Public Route Component (redirect if authenticated)
 const PublicRoute: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, user } = useAuthStore();
 
   if (isLoading) {
     return <PageLoader />;
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={getDefaultRouteForRole(user?.role)} replace />;
   }
 
   return <Outlet />;
+};
+
+const HomeRedirect: React.FC = () => {
+  const { user } = useAuthStore();
+  return <Navigate to={getDefaultRouteForRole(user?.role)} replace />;
 };
 
 // Router configuration
@@ -96,126 +113,156 @@ export const router = createBrowserRouter([
         children: [
           {
             path: '/',
-            element: <Navigate to="/dashboard" replace />,
+            element: <HomeRedirect />,
           },
           {
             path: '/dashboard',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <DashboardPage />
-              </Suspense>
+              <RoleGuard allowedRoles={['ADMIN', 'DOCENTE', 'ESTUDIANTE']}>
+                <Suspense fallback={<PageLoader />}>
+                  <DashboardPage />
+                </Suspense>
+              </RoleGuard>
             ),
           },
           {
             path: '/students',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <StudentsPage />
-              </Suspense>
+              <RoleGuard allowedRoles={['ADMIN', 'DOCENTE']}>
+                <Suspense fallback={<PageLoader />}>
+                  <StudentsPage />
+                </Suspense>
+              </RoleGuard>
             ),
           },
           {
             path: '/teachers',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <TeachersPage />
-              </Suspense>
+              <RoleGuard allowedRoles={['ADMIN']}>
+                <Suspense fallback={<PageLoader />}>
+                  <TeachersPage />
+                </Suspense>
+              </RoleGuard>
             ),
           },
           {
             path: '/programs',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <ProgramsPage />
-              </Suspense>
+              <RoleGuard allowedRoles={['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE']}>
+                <Suspense fallback={<PageLoader />}>
+                  <ProgramsPage />
+                </Suspense>
+              </RoleGuard>
             ),
           },
           {
             path: '/groups',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <GroupsPage />
-              </Suspense>
+              <RoleGuard allowedRoles={['ADMIN', 'DOCENTE']}>
+                <Suspense fallback={<PageLoader />}>
+                  <GroupsPage />
+                </Suspense>
+              </RoleGuard>
             ),
           },
           {
             path: '/enrollments',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <EnrollmentsPage />
-              </Suspense>
+              <RoleGuard allowedRoles={['ADMIN', 'DOCENTE', 'ESTUDIANTE']}>
+                <Suspense fallback={<PageLoader />}>
+                  <EnrollmentsPage />
+                </Suspense>
+              </RoleGuard>
             ),
           },
           {
             path: '/attendance',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <AttendancePage />
-              </Suspense>
+              <RoleGuard allowedRoles={['ADMIN', 'DOCENTE', 'ESTUDIANTE']}>
+                <Suspense fallback={<PageLoader />}>
+                  <AttendancePage />
+                </Suspense>
+              </RoleGuard>
             ),
           },
           {
             path: '/evaluations',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <EvaluationsPage />
-              </Suspense>
+              <RoleGuard allowedRoles={['ADMIN', 'DOCENTE', 'ESTUDIANTE']}>
+                <Suspense fallback={<PageLoader />}>
+                  <EvaluationsPage />
+                </Suspense>
+              </RoleGuard>
             ),
           },
           {
             path: '/venues',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <VenuesPage />
-              </Suspense>
+              <RoleGuard allowedRoles={['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE']}>
+                <Suspense fallback={<PageLoader />}>
+                  <VenuesPage />
+                </Suspense>
+              </RoleGuard>
             ),
           },
           {
             path: '/reservations',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <ReservationsPage />
-              </Suspense>
+              <RoleGuard allowedRoles={['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE']}>
+                <Suspense fallback={<PageLoader />}>
+                  <ReservationsPage />
+                </Suspense>
+              </RoleGuard>
             ),
           },
           {
             path: '/contracts',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <ContractsPage />
-              </Suspense>
+              <RoleGuard allowedRoles={['ADMIN']}>
+                <Suspense fallback={<PageLoader />}>
+                  <ContractsPage />
+                </Suspense>
+              </RoleGuard>
             ),
           },
           {
             path: '/maintenance',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <MaintenancePage />
-              </Suspense>
+              <RoleGuard allowedRoles={['ADMIN']}>
+                <Suspense fallback={<PageLoader />}>
+                  <MaintenancePage />
+                </Suspense>
+              </RoleGuard>
             ),
           },
           {
             path: '/reports',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <ReportsPage />
-              </Suspense>
+              <RoleGuard allowedRoles={['ADMIN', 'DOCENTE', 'ESTUDIANTE']}>
+                <Suspense fallback={<PageLoader />}>
+                  <ReportsPage />
+                </Suspense>
+              </RoleGuard>
             ),
           },
           {
             path: '/profile',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <ProfilePage />
-              </Suspense>
+              <RoleGuard allowedRoles={['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE']}>
+                <Suspense fallback={<PageLoader />}>
+                  <ProfilePage />
+                </Suspense>
+              </RoleGuard>
             ),
           },
           {
             path: '/settings',
             element: (
-              <Suspense fallback={<PageLoader />}>
-                <SettingsPage />
-              </Suspense>
+              <RoleGuard allowedRoles={['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE']}>
+                <Suspense fallback={<PageLoader />}>
+                  <SettingsPage />
+                </Suspense>
+              </RoleGuard>
             ),
           },
         ],
@@ -231,7 +278,7 @@ export const router = createBrowserRouter([
           <h1 className="text-6xl font-bold text-primary-500">404</h1>
           <p className="mt-4 text-xl text-dark-600 dark:text-dark-300">Página no encontrada</p>
           <a
-            href="/dashboard"
+            href="/"
             className="mt-6 inline-block btn-primary"
           >
             Volver al inicio

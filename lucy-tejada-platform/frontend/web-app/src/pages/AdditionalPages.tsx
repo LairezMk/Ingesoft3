@@ -7,6 +7,7 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { storage } from "@/services/mockApi";
 import { useAuthStore, type UserProfile } from "@/store/authStore";
+import { normalizeRole } from "@/utils/rbac";
 import {
   PlusIcon,
   PencilIcon,
@@ -44,6 +45,9 @@ interface Venue {
 }
 
 export const VenuesPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const role = normalizeRole(user?.role);
+  const canManageVenues = role === "ADMIN";
   const today = new Date().toISOString().split("T")[0];
   const [isCreateVenueModalOpen, setIsCreateVenueModalOpen] = useState(false);
 
@@ -222,15 +226,19 @@ export const VenuesPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Escenarios Culturales</h1>
-          <p className="text-dark-500 mt-1">Gestión de espacios físicos</p>
+          <p className="text-dark-500 mt-1">
+            {canManageVenues ? "Gestión de espacios físicos" : "Consulta de escenarios disponibles"}
+          </p>
         </div>
-        <button
-          className="btn-primary flex items-center gap-2"
-          onClick={() => setIsCreateVenueModalOpen(true)}
-        >
-          <PlusIcon className="w-5 h-5" />
-          Nuevo Escenario
-        </button>
+        {canManageVenues && (
+          <button
+            className="btn-primary flex items-center gap-2"
+            onClick={() => setIsCreateVenueModalOpen(true)}
+          >
+            <PlusIcon className="w-5 h-5" />
+            Nuevo Escenario
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -304,7 +312,7 @@ export const VenuesPage: React.FC = () => {
         ))}
       </div>
 
-      {isCreateVenueModalOpen && (
+      {canManageVenues && isCreateVenueModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/40"
@@ -471,7 +479,17 @@ export const ReservationsPage: React.FC = () => {
     startTime: string;
     endTime: string;
     status: "APPROVED" | "PENDING";
+    requestedBy?: {
+      name: string;
+      email: string;
+      phone?: string;
+      documentId?: string;
+    };
   }
+
+  const { user } = useAuthStore();
+  const role = normalizeRole(user?.role);
+  const isVisitor = role === "VISITANTE";
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -551,6 +569,10 @@ export const ReservationsPage: React.FC = () => {
     startTime: "09:00",
     endTime: "11:00",
     status: "PENDING" as Reservation["status"],
+    requesterName: "",
+    requesterEmail: "",
+    requesterPhone: "",
+    requesterDocumentId: "",
   });
 
   const getVenueById = (venueId: string) =>
@@ -566,6 +588,10 @@ export const ReservationsPage: React.FC = () => {
       startTime: "09:00",
       endTime: "11:00",
       status: "PENDING",
+      requesterName: "",
+      requesterEmail: "",
+      requesterPhone: "",
+      requesterDocumentId: "",
     });
   };
 
@@ -588,6 +614,29 @@ export const ReservationsPage: React.FC = () => {
       return;
     }
 
+    if (isVisitor) {
+      if (!formData.requesterName.trim() || !formData.requesterEmail.trim()) {
+        toast.error("Como visitante debes ingresar nombre y correo para la solicitud.");
+        return;
+      }
+    }
+
+    const defaultRequesterName =
+      user?.profile?.firstName && user?.profile?.lastName
+        ? `${user.profile.firstName} ${user.profile.lastName}`
+        : user?.email || "Usuario";
+    const requester = isVisitor
+      ? {
+          name: formData.requesterName.trim(),
+          email: formData.requesterEmail.trim(),
+          phone: formData.requesterPhone.trim(),
+          documentId: formData.requesterDocumentId.trim(),
+        }
+      : {
+          name: defaultRequesterName,
+          email: user?.email || "",
+        };
+
     const newReservation: Reservation = {
       id: String(Date.now()),
       venueId: selectedVenue.id,
@@ -599,6 +648,7 @@ export const ReservationsPage: React.FC = () => {
       startTime: formData.startTime,
       endTime: formData.endTime,
       status: formData.status,
+      requestedBy: requester,
     };
 
     setReservations((previous) => {
@@ -617,14 +667,18 @@ export const ReservationsPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Reservas de Escenarios</h1>
-          <p className="text-dark-500 mt-1">Gestión de reservas y eventos</p>
+          <p className="text-dark-500 mt-1">
+            {isVisitor
+              ? "Solicita reservas y alquileres de escenarios"
+              : "Gestión de reservas y eventos"}
+          </p>
         </div>
         <button
           className="btn-primary flex items-center gap-2"
           onClick={() => setIsCreateModalOpen(true)}
         >
           <PlusIcon className="w-5 h-5" />
-          Nueva Reserva
+          {isVisitor ? "Solicitar Reserva" : "Nueva Reserva"}
         </button>
       </div>
 
@@ -760,6 +814,56 @@ export const ReservationsPage: React.FC = () => {
                     required
                   />
                 </div>
+                {isVisitor && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Nombre solicitante</label>
+                      <input
+                        type="text"
+                        className="input"
+                        value={formData.requesterName}
+                        onChange={(event) =>
+                          setFormData((previous) => ({ ...previous, requesterName: event.target.value }))
+                        }
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Correo solicitante</label>
+                      <input
+                        type="email"
+                        className="input"
+                        value={formData.requesterEmail}
+                        onChange={(event) =>
+                          setFormData((previous) => ({ ...previous, requesterEmail: event.target.value }))
+                        }
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Teléfono</label>
+                      <input
+                        type="text"
+                        className="input"
+                        value={formData.requesterPhone}
+                        onChange={(event) =>
+                          setFormData((previous) => ({ ...previous, requesterPhone: event.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Documento</label>
+                      <input
+                        type="text"
+                        className="input"
+                        value={formData.requesterDocumentId}
+                        onChange={(event) =>
+                          setFormData((previous) => ({ ...previous, requesterDocumentId: event.target.value }))
+                        }
+                      />
+                    </div>
+                  </>
+                )}
                 <div>
                   <label className="block text-sm font-medium mb-1">Fecha</label>
                   <input
@@ -1857,6 +1961,14 @@ export const MaintenancePage: React.FC = () => {
 
 // ReportsPage.tsx
 export const ReportsPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const role = normalizeRole(user?.role);
+  const isStudent = role === "ESTUDIANTE";
+  const studentName =
+    user?.profile?.firstName && user?.profile?.lastName
+      ? `${user.profile.firstName} ${user.profile.lastName}`.trim()
+      : "";
+
   interface StudentReportRow {
     id: string;
     documentType: string;
@@ -1903,6 +2015,9 @@ export const ReportsPage: React.FC = () => {
   };
 
   const getStudentsForReport = async () => {
+    if (isStudent) {
+      throw new Error("Como estudiante solo puedes descargar reportes de asistencia y evaluaciones.");
+    }
     const students = storage.get<StudentReportRow[]>("students") || [];
 
     if (students.length === 0) {
@@ -1914,7 +2029,23 @@ export const ReportsPage: React.FC = () => {
 
   const getAttendanceForReport = async () => {
     const attendance = storage.get<AttendanceReportRow[]>("attendance_records") || [];
-    if (attendance.length > 0) return attendance;
+    if (attendance.length > 0) {
+      if (!isStudent) return attendance;
+      const filteredByStudent = attendance.filter((item) =>
+        studentName ? item.studentName.toLowerCase().includes(studentName.toLowerCase()) : false,
+      );
+      return filteredByStudent.length > 0
+        ? filteredByStudent
+        : [
+            {
+              id: "A-STUDENT",
+              date: new Date().toISOString().split("T")[0],
+              groupName: "Curso asignado",
+              studentName: studentName || user?.email || "Estudiante",
+              present: true,
+            },
+          ];
+    }
 
     const seedAttendance: AttendanceReportRow[] = [
       {
@@ -1940,12 +2071,47 @@ export const ReportsPage: React.FC = () => {
       },
     ];
     storage.set("attendance_records", seedAttendance);
-    return seedAttendance;
+    const baseData = seedAttendance;
+    if (!isStudent) return baseData;
+    const filteredByStudent = baseData.filter((item) =>
+      studentName ? item.studentName.toLowerCase().includes(studentName.toLowerCase()) : false,
+    );
+    return filteredByStudent.length > 0
+      ? filteredByStudent
+      : [
+          {
+            id: "A-STUDENT",
+            date: new Date().toISOString().split("T")[0],
+            groupName: "Curso asignado",
+            studentName: studentName || user?.email || "Estudiante",
+            present: true,
+          },
+        ];
   };
 
   const getEvaluationsForReport = async () => {
     const evaluations = storage.get<EvaluationReportRow[]>("evaluations") || [];
-    if (evaluations.length > 0) return evaluations;
+    if (evaluations.length > 0) {
+      if (!isStudent) return evaluations;
+      const filteredByStudent = evaluations.filter((item) =>
+        studentName ? item.studentName.toLowerCase().includes(studentName.toLowerCase()) : false,
+      );
+      return filteredByStudent.length > 0
+        ? filteredByStudent
+        : [
+            {
+              id: "E-STUDENT",
+              studentName: studentName || user?.email || "Estudiante",
+              date: new Date().toISOString().split("T")[0],
+              creativity: 4,
+              technique: 4,
+              participation: 4,
+              progress: 4,
+              average: 4,
+              comments: "Reporte individual generado para estudiante.",
+            },
+          ];
+    }
 
     const seedEvaluations: EvaluationReportRow[] = [
       {
@@ -1972,7 +2138,26 @@ export const ReportsPage: React.FC = () => {
       },
     ];
     storage.set("evaluations", seedEvaluations);
-    return seedEvaluations;
+    const baseData = seedEvaluations;
+    if (!isStudent) return baseData;
+    const filteredByStudent = baseData.filter((item) =>
+      studentName ? item.studentName.toLowerCase().includes(studentName.toLowerCase()) : false,
+    );
+    return filteredByStudent.length > 0
+      ? filteredByStudent
+      : [
+          {
+            id: "E-STUDENT",
+            studentName: studentName || user?.email || "Estudiante",
+            date: new Date().toISOString().split("T")[0],
+            creativity: 4,
+            technique: 4,
+            participation: 4,
+            progress: 4,
+            average: 4,
+            comments: "Reporte individual generado para estudiante.",
+          },
+        ];
   };
 
   const downloadFile = (filename: string, content: BlobPart, mimeType: string) => {
@@ -2355,7 +2540,7 @@ export const ReportsPage: React.FC = () => {
       description: "Notas y evaluaciones cualitativas",
       icon: <DocumentTextIcon className="w-10 h-10 text-amber-600 dark:text-amber-400" />,
     },
-  ];
+  ].filter((report) => (isStudent ? report.id !== "students" : true));
 
   return (
     <div className="space-y-6">

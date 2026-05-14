@@ -3,6 +3,8 @@
  */
 import React, { useState } from "react";
 import { storage } from "@/services/mockApi";
+import { useAuthStore } from "@/store/authStore";
+import { normalizeRole } from "@/utils/rbac";
 import {
   CalendarIcon,
   CheckCircleIcon,
@@ -10,6 +12,9 @@ import {
 } from "@heroicons/react/24/outline";
 
 const AttendancePage: React.FC = () => {
+  const { user } = useAuthStore();
+  const role = normalizeRole(user?.role);
+  const canEditAttendance = role === "ADMIN" || role === "DOCENTE";
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0],
   );
@@ -42,9 +47,11 @@ const AttendancePage: React.FC = () => {
           <h1 className="text-3xl font-bold">Control de Asistencia</h1>
           <p className="text-dark-500 mt-1">Registro diario de asistencia</p>
         </div>
-        <button onClick={saveAttendance} className="btn-primary">
-          Guardar Asistencia
-        </button>
+        {canEditAttendance && (
+          <button onClick={saveAttendance} className="btn-primary">
+            Guardar Asistencia
+          </button>
+        )}
       </div>
 
       <div className="card p-6">
@@ -58,6 +65,7 @@ const AttendancePage: React.FC = () => {
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
                 className="input pl-10 w-full"
+                disabled={!canEditAttendance}
               />
             </div>
           </div>
@@ -67,6 +75,7 @@ const AttendancePage: React.FC = () => {
               value={selectedGroup}
               onChange={(e) => setSelectedGroup(e.target.value)}
               className="input w-full"
+              disabled={!canEditAttendance}
             >
               <option value="1">Grupo A - Ballet Clásico</option>
               <option value="2">Grupo B - Guitarra</option>
@@ -118,6 +127,7 @@ const AttendancePage: React.FC = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => toggleAttendance(student.id)}
+                  disabled={!canEditAttendance}
                   className={`p-2 rounded-lg transition-colors ${
                     student.present
                       ? "bg-success-100 dark:bg-success-900/20 text-success-700 dark:text-success-400"
@@ -128,6 +138,7 @@ const AttendancePage: React.FC = () => {
                 </button>
                 <button
                   onClick={() => toggleAttendance(student.id)}
+                  disabled={!canEditAttendance}
                   className={`p-2 rounded-lg transition-colors ${
                     !student.present
                       ? "bg-error-100 dark:bg-error-900/20 text-error-700 dark:text-error-400"

@@ -3,6 +3,8 @@
  */
 import React, { useState, useEffect } from "react";
 import { storage } from "@/services/mockApi";
+import { useAuthStore } from "@/store/authStore";
+import { normalizeRole } from "@/utils/rbac";
 import {
   PlusIcon,
   CheckCircleIcon,
@@ -18,9 +20,14 @@ interface Enrollment {
   programName: string;
   enrollmentDate: string;
   status: string;
+  requestedByEmail?: string;
 }
 
 const EnrollmentsPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const role = normalizeRole(user?.role);
+  const canManageEnrollments = role === "ADMIN" || role === "DOCENTE";
+  const isStudent = role === "ESTUDIANTE";
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<Enrollment>>({});
@@ -69,6 +76,19 @@ const EnrollmentsPage: React.FC = () => {
     setEnrollments(data);
   };
 
+  const studentFullName =
+    user?.profile?.firstName && user?.profile?.lastName
+      ? `${user.profile.firstName} ${user.profile.lastName}`.toLowerCase()
+      : "";
+
+  const visibleEnrollments = isStudent
+    ? enrollments.filter(
+        (item) =>
+          item.requestedByEmail === user?.email ||
+          (studentFullName && item.studentName.toLowerCase() === studentFullName),
+      )
+    : enrollments;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newEnrollment = {
@@ -87,36 +107,40 @@ const EnrollmentsPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Matrículas</h1>
-          <p className="text-dark-500 mt-1">Gestión de inscripciones</p>
+          <p className="text-dark-500 mt-1">
+            {isStudent ? "Consulta de tus inscripciones" : "Gestión de inscripciones"}
+          </p>
         </div>
-        <button
-          onClick={() => {
-            setFormData({});
-            setIsModalOpen(true);
-          }}
-          className="btn-primary flex items-center gap-2"
-        >
-          <PlusIcon className="w-5 h-5" />
-          Nueva Matrícula
-        </button>
+        {canManageEnrollments && (
+          <button
+            onClick={() => {
+              setFormData({});
+              setIsModalOpen(true);
+            }}
+            className="btn-primary flex items-center gap-2"
+          >
+            <PlusIcon className="w-5 h-5" />
+            Nueva Matrícula
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="card p-4">
           <p className="text-sm text-dark-500">Total Matrículas</p>
-          <p className="text-2xl font-bold">{enrollments.length}</p>
+          <p className="text-2xl font-bold">{visibleEnrollments.length}</p>
         </div>
         <div className="card p-4">
           <p className="text-sm text-dark-500">Activas</p>
-          <p className="text-2xl font-bold text-success-600">
-            {enrollments.filter((e) => e.status === "ACTIVE").length}
-          </p>
+            <p className="text-2xl font-bold text-success-600">
+              {visibleEnrollments.filter((e) => e.status === "ACTIVE").length}
+            </p>
         </div>
         <div className="card p-4">
           <p className="text-sm text-dark-500">Pendientes</p>
-          <p className="text-2xl font-bold text-warning-600">
-            {enrollments.filter((e) => e.status === "PENDING").length}
-          </p>
+            <p className="text-2xl font-bold text-warning-600">
+              {visibleEnrollments.filter((e) => e.status === "PENDING").length}
+            </p>
         </div>
       </div>
 
@@ -145,7 +169,7 @@ const EnrollmentsPage: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-dark-200 dark:divide-dark-700">
-            {enrollments.map((enrollment) => (
+            {visibleEnrollments.map((enrollment) => (
               <tr
                 key={enrollment.id}
                 className="hover:bg-dark-50 dark:hover:bg-dark-800"
@@ -174,7 +198,7 @@ const EnrollmentsPage: React.FC = () => {
                   </span>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  {enrollment.status === "PENDING" && (
+                  {canManageEnrollments && enrollment.status === "PENDING" && (
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => {
@@ -213,7 +237,13 @@ const EnrollmentsPage: React.FC = () => {
         </table>
       </div>
 
-      {isModalOpen && (
+      {isStudent && visibleEnrollments.length === 0 && (
+        <div className="card p-6 text-dark-500">
+          Aún no tienes matrículas registradas. Puedes solicitar una desde Programas.
+        </div>
+      )}
+
+      {canManageEnrollments && isModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4">
             <div

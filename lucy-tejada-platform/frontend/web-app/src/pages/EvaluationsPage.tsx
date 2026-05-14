@@ -4,8 +4,13 @@
 import React, { useState } from 'react';
 import { StarIcon } from '@heroicons/react/24/solid';
 import { StarIcon as StarOutline } from '@heroicons/react/24/outline';
+import { useAuthStore } from '@/store/authStore';
+import { normalizeRole } from '@/utils/rbac';
 
 const EvaluationsPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const role = normalizeRole(user?.role);
+  const canEditEvaluations = role === 'ADMIN' || role === 'DOCENTE';
   const [selectedStudent, setSelectedStudent] = useState('');
   const [ratings, setRatings] = useState({
     creativity: 0,
@@ -57,6 +62,11 @@ const EvaluationsPage: React.FC = () => {
               <option key={student} value={student}>{student}</option>
             ))}
           </select>
+          {!canEditEvaluations && (
+            <p className="text-xs text-dark-500 mt-2">
+              Vista de solo lectura para estudiantes.
+            </p>
+          )}
         </div>
 
         {selectedStudent && (
@@ -69,7 +79,8 @@ const EvaluationsPage: React.FC = () => {
                     {[1, 2, 3, 4, 5].map(star => (
                       <button
                         key={star}
-                        onClick={() => setRating(key, star)}
+                        onClick={() => canEditEvaluations && setRating(key, star)}
+                        disabled={!canEditEvaluations}
                         className="transition-transform hover:scale-110"
                       >
                         {star <= ratings[key as keyof typeof ratings] ? (
@@ -89,16 +100,19 @@ const EvaluationsPage: React.FC = () => {
               <label className="block text-sm font-medium mb-2">Observaciones</label>
               <textarea
                 value={comments}
-                onChange={(e) => setComments(e.target.value)}
+                onChange={(e) => canEditEvaluations && setComments(e.target.value)}
                 className="input w-full"
                 rows={4}
                 placeholder="Comentarios sobre el desempeño del estudiante..."
+                disabled={!canEditEvaluations}
               />
             </div>
 
-            <div className="flex justify-end">
-              <button onClick={saveEvaluation} className="btn-primary">Guardar Evaluación</button>
-            </div>
+            {canEditEvaluations && (
+              <div className="flex justify-end">
+                <button onClick={saveEvaluation} className="btn-primary">Guardar Evaluación</button>
+              </div>
+            )}
           </>
         )}
 
