@@ -20,14 +20,28 @@ import {
   LockClosedIcon,
   EyeIcon,
   EyeSlashIcon,
+  UserIcon,
+  IdentificationIcon,
+  PhoneIcon,
   MusicalNoteIcon,
   PaintBrushIcon,
 } from '@heroicons/react/24/outline';
+import { getDefaultRouteForRole } from '@/utils/rbac';
 
 interface LoginFormData {
   email: string;
   password: string;
   rememberMe: boolean;
+}
+
+interface RegisterFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  documentNumber: string;
+  password: string;
+  confirmPassword: string;
 }
 
 const TheaterMaskIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -73,7 +87,10 @@ export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [mode, setMode] = useState<'login' | 'register'>('login');
 
   const {
     register,
@@ -84,6 +101,22 @@ export const LoginPage: React.FC = () => {
       email: '',
       password: '',
       rememberMe: false,
+    },
+  });
+
+  const {
+    register: registerField,
+    handleSubmit: handleRegisterSubmit,
+    formState: { errors: registerErrors },
+  } = useForm<RegisterFormData>({
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      documentNumber: '',
+      password: '',
+      confirmPassword: '',
     },
   });
 
@@ -102,13 +135,42 @@ export const LoginPage: React.FC = () => {
           id: response.data.user.id,
           email: response.data.user.email,
           role: response.data.user.role,
+          profile: response.data.user.profile,
         },
         response.data.accessToken,
         response.data.refreshToken
       );
 
       toast.success('¡Bienvenido al Centro Cultural Lucy Tejada!');
-      navigate('/dashboard');
+      navigate(getDefaultRouteForRole(response.data.user.role));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onRegister = async (data: RegisterFormData) => {
+    setIsLoading(true);
+    try {
+      const response = await authService.register(data);
+
+      if (!response.success || !response.data) {
+        toast.error(response.message || 'No se pudo completar el registro.');
+        return;
+      }
+
+      login(
+        {
+          id: response.data.user.id,
+          email: response.data.user.email,
+          role: response.data.user.role,
+          profile: response.data.user.profile,
+        },
+        response.data.accessToken,
+        response.data.refreshToken
+      );
+
+      toast.success('Registro exitoso. Ya puedes usar tu perfil de estudiante.');
+      navigate(getDefaultRouteForRole(response.data.user.role));
     } finally {
       setIsLoading(false);
     }
@@ -206,13 +268,41 @@ export const LoginPage: React.FC = () => {
               />
             </div>
             <h2 className="text-2xl font-display font-bold text-dark-900 dark:text-white">
-              Iniciar Sesión
+              {mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta'}
             </h2>
             <p className="mt-2 text-dark-500 dark:text-dark-400">
-              Accede a la plataforma de gestión
+              {mode === 'login'
+                ? 'Accede a la plataforma de gestión'
+                : 'Regístrate como estudiante para solicitar matrículas'}
             </p>
           </div>
 
+          <div className="mb-6 grid grid-cols-2 rounded-xl bg-dark-100 p-1 dark:bg-dark-800">
+            <button
+              type="button"
+              onClick={() => setMode('login')}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                mode === 'login'
+                  ? 'bg-white text-dark-900 shadow-sm dark:bg-dark-700 dark:text-white'
+                  : 'text-dark-500 dark:text-dark-300'
+              }`}
+            >
+              Iniciar sesión
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('register')}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                mode === 'register'
+                  ? 'bg-white text-dark-900 shadow-sm dark:bg-dark-700 dark:text-white'
+                  : 'text-dark-500 dark:text-dark-300'
+              }`}
+            >
+              Registrarme
+            </button>
+          </div>
+
+          {mode === 'login' ? (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <Input
               label="Correo electrónico"
@@ -287,6 +377,120 @@ export const LoginPage: React.FC = () => {
               Iniciar Sesión
             </Button>
           </form>
+          ) : (
+          <form onSubmit={handleRegisterSubmit(onRegister)} className="space-y-5">
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Nombres"
+                placeholder="Samuel"
+                icon={<UserIcon className="w-5 h-5" />}
+                error={registerErrors.firstName?.message}
+                {...registerField('firstName', {
+                  required: 'El nombre es requerido',
+                })}
+              />
+              <Input
+                label="Apellidos"
+                placeholder="Herrera"
+                icon={<UserIcon className="w-5 h-5" />}
+                error={registerErrors.lastName?.message}
+                {...registerField('lastName', {
+                  required: 'El apellido es requerido',
+                })}
+              />
+            </div>
+
+            <Input
+              label="Correo electrónico"
+              type="email"
+              placeholder="tu@correo.com"
+              icon={<EnvelopeIcon className="w-5 h-5" />}
+              error={registerErrors.email?.message}
+              {...registerField('email', {
+                required: 'El correo es requerido',
+              })}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Teléfono"
+                placeholder="3001234567"
+                icon={<PhoneIcon className="w-5 h-5" />}
+                error={registerErrors.phone?.message}
+                {...registerField('phone')}
+              />
+              <Input
+                label="Documento"
+                placeholder="1234567890"
+                icon={<IdentificationIcon className="w-5 h-5" />}
+                error={registerErrors.documentNumber?.message}
+                {...registerField('documentNumber')}
+              />
+            </div>
+
+            <div className="relative">
+              <Input
+                label="Contraseña"
+                type={showRegisterPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                icon={<LockClosedIcon className="w-5 h-5" />}
+                error={registerErrors.password?.message}
+                {...registerField('password', {
+                  required: 'La contraseña es requerida',
+                  minLength: {
+                    value: 8,
+                    message: 'Mínimo 8 caracteres',
+                  },
+                })}
+              />
+              <button
+                type="button"
+                onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                className="absolute right-3 top-9 text-dark-400 hover:text-dark-600"
+              >
+                {showRegisterPassword ? (
+                  <EyeSlashIcon className="w-5 h-5" />
+                ) : (
+                  <EyeIcon className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+
+            <div className="relative">
+              <Input
+                label="Confirmar contraseña"
+                type={showRegisterConfirmPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                icon={<LockClosedIcon className="w-5 h-5" />}
+                error={registerErrors.confirmPassword?.message}
+                {...registerField('confirmPassword', {
+                  required: 'Debes confirmar la contraseña',
+                })}
+              />
+              <button
+                type="button"
+                onClick={() => setShowRegisterConfirmPassword(!showRegisterConfirmPassword)}
+                className="absolute right-3 top-9 text-dark-400 hover:text-dark-600"
+              >
+                {showRegisterConfirmPassword ? (
+                  <EyeSlashIcon className="w-5 h-5" />
+                ) : (
+                  <EyeIcon className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              fullWidth
+              loading={isLoading}
+            >
+              Crear cuenta
+            </Button>
+          </form>
+          )}
 
           <div className="mt-8 text-center">
             <p className="text-sm text-dark-500 dark:text-dark-400">

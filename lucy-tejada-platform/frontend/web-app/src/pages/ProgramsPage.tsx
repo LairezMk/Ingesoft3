@@ -2,6 +2,7 @@
  * PROGRAMS PAGE - Programas Formativos
  */
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { storage } from "@/services/mockApi";
 import { useAuthStore } from "@/store/authStore";
 import { normalizeRole } from "@/utils/rbac";
@@ -35,6 +36,7 @@ interface TeacherOption {
 }
 
 const ProgramsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,9 +53,11 @@ const ProgramsPage: React.FC = () => {
     phone: "",
   });
   const { user } = useAuthStore();
-  const role = normalizeRole(user?.role);
+  const role = normalizeRole(user?.role) ?? "VISITANTE";
   const canManagePrograms = role === "ADMIN" || role === "DOCENTE";
   const canRequestEnrollment = role === "ESTUDIANTE" || role === "VISITANTE";
+  const canEditProgram = (program: Program) =>
+    role === "ADMIN" || (role === "DOCENTE" && program.teacherId === user?.id);
 
   const areas = ["Danza", "Música", "Teatro", "Artes Visuales"];
   const levels = ["Básico", "Intermedio", "Avanzado"];
@@ -193,6 +197,12 @@ const ProgramsPage: React.FC = () => {
   };
 
   const handleOpenVisitorEnrollment = (program: Program) => {
+    if (!user) {
+      toast("Debes iniciar sesión para matricularte. Al ingresar tendrás perfil de estudiante.");
+      navigate("/login");
+      return;
+    }
+
     setSelectedProgram(program);
     setRegistrationForm({
       firstName: "",
@@ -321,7 +331,7 @@ const ProgramsPage: React.FC = () => {
                   </span>
                 </div>
               </div>
-              {canManagePrograms && (
+              {canEditProgram(program) && (
                 <div className="flex gap-2">
                   <button
                     onClick={() => {

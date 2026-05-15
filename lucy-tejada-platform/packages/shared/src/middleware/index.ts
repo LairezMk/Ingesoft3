@@ -64,7 +64,7 @@ export class ContentTypeMiddleware implements NestMiddleware {
       !req.headers['content-type'].includes('application/json') &&
       !req.headers['content-type'].includes('multipart/form-data')
     ) {
-      return res.status(415).json({
+      res.status(415).json({
         success: false,
         message: 'Tipo de contenido no soportado',
         errors: [
@@ -74,6 +74,7 @@ export class ContentTypeMiddleware implements NestMiddleware {
           },
         ],
       });
+      return;
     }
     next();
   }

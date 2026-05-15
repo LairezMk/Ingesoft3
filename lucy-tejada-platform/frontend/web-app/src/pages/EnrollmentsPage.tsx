@@ -81,13 +81,22 @@ const EnrollmentsPage: React.FC = () => {
       ? `${user.profile.firstName} ${user.profile.lastName}`.toLowerCase()
       : "";
 
+  const teacherProgramNames =
+    role === "DOCENTE"
+      ? (storage.get<Array<{ name: string; teacherId?: string }>>("programs") || [])
+          .filter((program) => program.teacherId === user?.id)
+          .map((program) => program.name)
+      : [];
+
   const visibleEnrollments = isStudent
     ? enrollments.filter(
         (item) =>
           item.requestedByEmail === user?.email ||
           (studentFullName && item.studentName.toLowerCase() === studentFullName),
       )
-    : enrollments;
+    : role === "DOCENTE"
+      ? enrollments.filter((item) => teacherProgramNames.includes(item.programName))
+      : enrollments;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -23,11 +23,11 @@ export const hasRoleAccess = (role: string | null | undefined, allowedRoles: App
 
 export const getDefaultRouteForRole = (role: string | null | undefined) => {
   const normalized = normalizeRole(role);
-  if (normalized === "VISITANTE") return "/venues";
+  if (normalized === "VISITANTE" || !normalized) return "/programs";
   if (normalized === "ADMIN" || normalized === "DOCENTE" || normalized === "ESTUDIANTE") {
     return "/dashboard";
   }
-  return "/login";
+  return "/programs";
 };
 
 export const getRoleLabel = (role: string | null | undefined) => {

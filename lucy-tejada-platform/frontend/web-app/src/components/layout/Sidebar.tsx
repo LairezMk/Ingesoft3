@@ -56,18 +56,25 @@ const navigation: NavItem[] = [
   { name: 'Configuración', href: '/settings', icon: CogIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE'] },
 ];
 
+const publicNavigation = new Set(['/programs', '/venues', '/reservations']);
+
 export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const { sidebarOpen, sidebarCollapsed, setSidebarOpen, toggleSidebarCollapse } = useUIStore();
   const { user, logout } = useAuthStore();
+  const effectiveRole: AppRole = user?.role ?? 'VISITANTE';
 
   const handleLogout = () => {
-    logout();
+    if (user) {
+      logout();
+    }
     navigate('/login');
   };
 
   const filteredNavigation = navigation.filter(
-    (item) => !item.roles || hasRoleAccess(user?.role, item.roles)
+    (item) =>
+      (!item.roles || hasRoleAccess(effectiveRole, item.roles)) &&
+      (user ? true : publicNavigation.has(item.href))
   );
 
   return (
@@ -212,13 +219,14 @@ export const Sidebar: React.FC = () => {
           onClick={handleLogout}
           className={clsx(
             'flex items-center gap-3 w-full px-3 py-2.5 rounded-xl',
-            'text-red-600 dark:text-red-400',
-            'hover:bg-red-50 dark:hover:bg-red-900/20',
+            user
+              ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+              : 'text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20',
             'transition-colors'
           )}
         >
           <ArrowLeftOnRectangleIcon className="w-5 h-5" />
-          {!sidebarCollapsed && <span>Cerrar sesión</span>}
+          {!sidebarCollapsed && <span>{user ? 'Cerrar sesión' : 'Iniciar sesión'}</span>}
         </button>
       </div>
     </motion.aside>

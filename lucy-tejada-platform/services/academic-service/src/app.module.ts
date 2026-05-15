@@ -34,6 +34,7 @@ import { QualitativeEvaluation } from './modules/evaluations/entities/qualitativ
 // Services
 import { StudentsService } from './modules/students/students.service.js';
 import { DashboardService } from './modules/dashboard/dashboard.service.js';
+import { JwtStrategy } from './modules/auth/strategies/jwt.strategy.js';
 
 // Controllers
 import { StudentsController } from './modules/students/students.controller.js';
@@ -91,6 +92,7 @@ import { DashboardController } from './modules/dashboard/dashboard.controller.js
   providers: [
     StudentsService,
     DashboardService,
+    JwtStrategy,
     {
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,

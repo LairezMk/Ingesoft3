@@ -91,7 +91,7 @@ const HomeRedirect: React.FC = () => {
 // Router configuration
 export const router = createBrowserRouter([
   {
-    // Public routes
+    // Public auth routes
     element: <PublicRoute />,
     children: [
       {
@@ -105,16 +105,46 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    // Public catalog routes
+    element: <MainLayout />,
+    children: [
+      {
+        path: '/',
+        element: <HomeRedirect />,
+      },
+      {
+        path: '/programs',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ProgramsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: '/venues',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <VenuesPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: '/reservations',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ReservationsPage />
+          </Suspense>
+        ),
+      },
+    ],
+  },
+  {
     // Protected routes
     element: <ProtectedRoute />,
     children: [
       {
         element: <MainLayout />,
         children: [
-          {
-            path: '/',
-            element: <HomeRedirect />,
-          },
           {
             path: '/dashboard',
             element: (
@@ -141,16 +171,6 @@ export const router = createBrowserRouter([
               <RoleGuard allowedRoles={['ADMIN']}>
                 <Suspense fallback={<PageLoader />}>
                   <TeachersPage />
-                </Suspense>
-              </RoleGuard>
-            ),
-          },
-          {
-            path: '/programs',
-            element: (
-              <RoleGuard allowedRoles={['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE']}>
-                <Suspense fallback={<PageLoader />}>
-                  <ProgramsPage />
                 </Suspense>
               </RoleGuard>
             ),
@@ -191,26 +211,6 @@ export const router = createBrowserRouter([
               <RoleGuard allowedRoles={['ADMIN', 'DOCENTE', 'ESTUDIANTE']}>
                 <Suspense fallback={<PageLoader />}>
                   <EvaluationsPage />
-                </Suspense>
-              </RoleGuard>
-            ),
-          },
-          {
-            path: '/venues',
-            element: (
-              <RoleGuard allowedRoles={['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE']}>
-                <Suspense fallback={<PageLoader />}>
-                  <VenuesPage />
-                </Suspense>
-              </RoleGuard>
-            ),
-          },
-          {
-            path: '/reservations',
-            element: (
-              <RoleGuard allowedRoles={['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE']}>
-                <Suspense fallback={<PageLoader />}>
-                  <ReservationsPage />
                 </Suspense>
               </RoleGuard>
             ),

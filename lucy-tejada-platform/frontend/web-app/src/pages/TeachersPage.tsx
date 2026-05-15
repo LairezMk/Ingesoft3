@@ -6,6 +6,8 @@
 
 import React, { useState, useEffect } from "react";
 import { storage } from "@/services/mockApi";
+import { authService } from "@/services/authService";
+import toast from "react-hot-toast";
 import {
   PlusIcon,
   PencilIcon,
@@ -16,6 +18,7 @@ import {
 
 interface Teacher {
   id: string;
+  firebaseUid?: string;
   documentType: string;
   documentNumber: string;
   firstName: string;
@@ -35,6 +38,7 @@ const TeachersPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
   const [formData, setFormData] = useState<Partial<Teacher>>({});
+  const [password, setPassword] = useState("");
 
   const specialtyOptions = ["Danza", "Música", "Teatro", "Artes Visuales"];
 
@@ -89,12 +93,14 @@ const TeachersPage: React.FC = () => {
       yearsExperience: 0,
       status: "ACTIVE",
     });
+    setPassword("");
     setIsModalOpen(true);
   };
 
   const handleEdit = (teacher: Teacher) => {
     setEditingTeacher(teacher);
     setFormData(teacher);
+    setPassword("");
     setIsModalOpen(true);
   };
 
@@ -106,26 +112,47 @@ const TeachersPage: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    let updatedTeachers;
     if (editingTeacher) {
-      updatedTeachers = teachers.map((t) =>
+      const updatedTeachers = teachers.map((t) =>
         t.id === editingTeacher.id ? { ...t, ...formData } : t,
       );
-    } else {
-      const newTeacher = {
-        ...formData,
-        id: String(teachers.length + 1),
-        createdAt: new Date().toISOString(),
-      } as Teacher;
-      updatedTeachers = [...teachers, newTeacher];
+      storage.set("teachers", updatedTeachers);
+      setIsModalOpen(false);
+      loadTeachers();
+      toast.success("Docente actualizado correctamente.");
+      return;
     }
 
-    storage.set("teachers", updatedTeachers);
+    if (!password.trim()) {
+      toast.error("La contraseña del docente es obligatoria.");
+      return;
+    }
+
+    const response = await authService.createTeacherAccount({
+      firstName: formData.firstName || "",
+      lastName: formData.lastName || "",
+      email: formData.email || "",
+      password,
+      documentType: formData.documentType || "CC",
+      documentNumber: formData.documentNumber || "",
+      phone: formData.phone || "",
+      specialties: formData.specialties || [],
+      yearsExperience: formData.yearsExperience || 0,
+      status: formData.status || "ACTIVE",
+    });
+
+    if (!response.success) {
+      toast.error(response.message || "No se pudo crear el docente.");
+      return;
+    }
+
     setIsModalOpen(false);
+    setPassword("");
     loadTeachers();
+    toast.success("Docente creado y registrado en Firebase.");
   };
 
   const toggleSpecialty = (specialty: string) => {
@@ -477,6 +504,22 @@ const TeachersPage: React.FC = () => {
                     </select>
                   </div>
                 </div>
+
+                {!editingTeacher && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Contraseña
+                    </label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="input w-full"
+                      required
+                      minLength={8}
+                    />
+                  </div>
+                )}
 
                 <div className="flex justify-end gap-3 mt-6">
                   <button

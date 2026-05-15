@@ -12,7 +12,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { UserRole, RBAC_PERMISSIONS } from '@lucy-tejada/types';
+import { UserRole, RBAC_PERMISSIONS, type RBACPermission } from '@lucy-tejada/types';
 import { ROLES_KEY, PERMISSIONS_KEY, IS_PUBLIC_KEY } from '../decorators/index.js';
 
 /**
@@ -111,7 +111,7 @@ export class PermissionsGuard implements CanActivate {
     }
 
     // Obtener permisos del rol del usuario
-    const rolePermissions = RBAC_PERMISSIONS[user.role as UserRole] || [];
+    const rolePermissions: RBACPermission[] = RBAC_PERMISSIONS[user.role as UserRole] || [];
 
     // Verificar cada permiso requerido
     const hasPermissions = requiredPermissions.every((required) => {

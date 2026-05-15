@@ -46,7 +46,7 @@ interface Venue {
 
 export const VenuesPage: React.FC = () => {
   const { user } = useAuthStore();
-  const role = normalizeRole(user?.role);
+  const role = normalizeRole(user?.role) ?? "VISITANTE";
   const canManageVenues = role === "ADMIN";
   const today = new Date().toISOString().split("T")[0];
   const [isCreateVenueModalOpen, setIsCreateVenueModalOpen] = useState(false);
@@ -488,7 +488,7 @@ export const ReservationsPage: React.FC = () => {
   }
 
   const { user } = useAuthStore();
-  const role = normalizeRole(user?.role);
+  const role = normalizeRole(user?.role) ?? "VISITANTE";
   const isVisitor = role === "VISITANTE";
 
   const today = new Date().toISOString().split("T")[0];

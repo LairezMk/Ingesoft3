@@ -23,6 +23,7 @@ export const Header: React.FC = () => {
   const navigate = useNavigate();
   const { darkMode, toggleDarkMode, setSidebarOpen } = useUIStore();
   const { user } = useAuthStore();
+  const roleLabel = user ? getRoleLabel(user.role) : 'Visitante';
 
   return (
     <header className="sticky top-0 z-30 glass border-b border-dark-200/50 dark:border-dark-700/50">
@@ -92,9 +93,9 @@ export const Header: React.FC = () => {
           <div className="hidden sm:flex items-center gap-3 pl-3 ml-2 border-l border-dark-200 dark:border-dark-700">
             <button
               type="button"
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate(user ? '/profile' : '/login')}
               className="avatar-md cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all"
-              title="Ver perfil"
+              title={user ? 'Ver perfil' : 'Iniciar sesión'}
             >
               {user?.profile?.photoUrl ? (
                 <img
@@ -110,17 +111,17 @@ export const Header: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate(user ? '/profile' : '/login')}
               className="hidden lg:block text-left hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-              title="Editar perfil"
+              title={user ? 'Editar perfil' : 'Iniciar sesión'}
             >
               <p className="text-sm font-medium text-dark-900 dark:text-white">
-                {user?.profile?.firstName
+              {user?.profile?.firstName
                   ? `${user.profile.firstName} ${user.profile?.lastName ?? ''}`.trim()
-                  : user?.email}
+                  : user?.email ?? 'Acceso público'}
               </p>
               <p className="text-xs text-dark-500 dark:text-dark-400">
-                {getRoleLabel(user?.role)}
+                {roleLabel}
               </p>
             </button>
           </div>
