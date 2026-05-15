@@ -7,6 +7,7 @@
 import React, { useState, useEffect } from "react";
 import { storage } from "@/services/mockApi";
 import { authService } from "@/services/authService";
+import { ensureInstitutionData } from "@/services/institutionData";
 import toast from "react-hot-toast";
 import {
   PlusIcon,
@@ -63,25 +64,8 @@ const TeachersPage: React.FC = () => {
   }, [searchTerm, teachers]);
 
   const loadTeachers = () => {
+    ensureInstitutionData();
     let data = storage.get<Teacher[]>("teachers") || [];
-
-    if (data.length === 0) {
-      data = Array.from({ length: 20 }, (_, i) => ({
-        id: String(i + 1),
-        documentType: "CC",
-        documentNumber: String(5000000 + i),
-        firstName: `Docente${i + 1}`,
-        lastName: `Apellido${i + 1}`,
-        email: `docente${i + 1}@lucytejada.gov.co`,
-        phone: `310${String(i).padStart(7, "0")}`,
-        specialties: [specialtyOptions[i % 4]],
-        yearsExperience: Math.floor(Math.random() * 20) + 1,
-        status: i % 5 === 0 ? "INACTIVE" : "ACTIVE",
-        createdAt: new Date().toISOString(),
-      }));
-      storage.set("teachers", data);
-    }
-
     setTeachers(data);
   };
 

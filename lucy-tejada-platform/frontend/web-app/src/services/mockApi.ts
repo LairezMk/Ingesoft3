@@ -5,6 +5,14 @@
  */
 
 import { ApiResponse, PaginatedResponse } from "./api";
+import { ensureInstitutionData } from "./institutionData";
+import {
+  deleteKeyFromFirestore,
+  initializeFirestoreCache,
+  removeLocalCache,
+  syncKeyToFirestore,
+  writeLocalCache,
+} from "./firestoreSync";
 
 // Clave base para localStorage
 const STORAGE_PREFIX = "lucy_tejada_";
@@ -21,15 +29,17 @@ export const storage = {
   },
 
   set: <T>(key: string, value: T): void => {
-    try {
-      localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
-    } catch (error) {
-      console.error("Error guardando en localStorage:", error);
-    }
+    writeLocalCache(key, value);
+    void syncKeyToFirestore(key, value).catch((error) => {
+      console.error(`Error sincronizando ${key} en Firestore:`, error);
+    });
   },
 
   remove: (key: string): void => {
-    localStorage.removeItem(STORAGE_PREFIX + key);
+    removeLocalCache(key);
+    void deleteKeyFromFirestore(key).catch((error) => {
+      console.error(`Error eliminando ${key} en Firestore:`, error);
+    });
   },
 
   clear: (): void => {
@@ -164,28 +174,9 @@ export class MockApiClient {
   // Mock de Estudiantes
   async getStudents(page: number = 1, limit: number = 10) {
     await delay();
+    ensureInstitutionData();
 
     let students = storage.get<any[]>("students") || [];
-
-    // Si no hay estudiantes, crear datos demo
-    if (students.length === 0) {
-      students = Array.from({ length: 50 }, (_, i) => ({
-        id: String(i + 1),
-        documentType: "CC",
-        documentNumber: String(1000000 + i),
-        firstName: `Estudiante${i + 1}`,
-        lastName: `Apellido${i + 1}`,
-        email: `estudiante${i + 1}@example.com`,
-        phone: `300${String(i).padStart(7, "0")}`,
-        birthDate: "2005-01-01",
-        gender: i % 2 === 0 ? "MALE" : "FEMALE",
-        city: "Pereira",
-        address: `Calle ${i + 1} #${i}-${i}`,
-        enrollmentStatus: "ACTIVE",
-        createdAt: new Date().toISOString(),
-      }));
-      storage.set("students", students);
-    }
 
     const paginatedResponse = createPaginatedResponse(students, page, limit);
     return createMockResponse(paginatedResponse, "Estudiantes obtenidos");
@@ -233,7 +224,7 @@ export class MockApiClient {
 
     const students = storage.get<any[]>("students") || [];
     const filtered = students.filter((s) => s.id !== id);
-    storage.set("students", students);
+    storage.set("students", filtered);
 
     return createMockResponse(null, "Estudiante eliminado");
   }
@@ -244,3 +235,8 @@ export const mockApi = new MockApiClient();
 
 // Variable de entorno para activar modo mock
 export const MOCK_MODE = import.meta.env.VITE_MOCK_MODE === "true";
+
+export const initializeRealDataLayer = async () => {
+  ensureInstitutionData();
+  await initializeFirestoreCache();
+};

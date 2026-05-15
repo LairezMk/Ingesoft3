@@ -19,6 +19,7 @@ import {
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { ApiResponse } from './api';
 import { firebaseAuth, firebaseConfig, firebaseDb, isFirebaseConfigured } from './firebase';
+import { createCallable } from './firebaseFunctions';
 import { type AppRole } from '@/utils/rbac';
 import { MOCK_MODE, mockApi, storage } from './mockApi';
 
@@ -139,17 +140,20 @@ const parseDisplayName = (displayName?: string | null) => {
 };
 
 const saveLocalAuthProfile = (profile: Record<string, unknown>) => {
-  const current = storage.get<Record<string, unknown>[]>('auth_profiles') || [];
+  const current = storage.get<Record<string, unknown>[]>('user_profiles') || [];
   const filtered = current.filter(
     (item) =>
       String(item.email || '').toLowerCase() !== String(profile.email || '').toLowerCase()
   );
-  storage.set('auth_profiles', [profile, ...filtered]);
+  storage.set('user_profiles', [profile, ...filtered]);
 };
 
 const getLocalAuthProfile = (email?: string | null) => {
   if (!email) return null;
-  const current = storage.get<Record<string, unknown>[]>('auth_profiles') || [];
+  const current =
+    storage.get<Record<string, unknown>[]>('user_profiles') ||
+    storage.get<Record<string, unknown>[]>('auth_profiles') ||
+    [];
   return (
     current.find(
       (item) => String(item.email || '').toLowerCase() === email.toLowerCase()
@@ -274,30 +278,86 @@ export const authService = {
       data.email.trim().toLowerCase() === DEMO_ADMIN_EMAIL &&
       data.password === DEMO_ADMIN_PASSWORD
     ) {
-      const adminUser: LoginResponse['user'] = {
-        id: 'admin-samuel-herrera',
-        email: DEMO_ADMIN_EMAIL,
-        name: 'Samuel Herrera',
-        role: 'ADMIN',
-        permissions: ['*'],
-      };
+      if (isFirebaseConfigured && firebaseAuth) {
+        try {
+          const adminCredential = await signInWithEmailAndPassword(
+            firebaseAuth,
+            DEMO_ADMIN_EMAIL,
+            DEMO_ADMIN_PASSWORD
+          );
+          await persistUserProfile(adminCredential.user.uid, {
+            uid: adminCredential.user.uid,
+            email: DEMO_ADMIN_EMAIL,
+            role: 'ADMIN',
+            firstName: 'Samuel',
+            lastName: 'Herrera',
+          });
+          const accessToken = await adminCredential.user.getIdToken();
+          const user = await toLoginUser(adminCredential.user);
 
-      const accessToken = `admin_access_${Date.now()}`;
-      const refreshToken = `admin_refresh_${Date.now()}`;
+          return {
+            success: true,
+            message: 'Inicio de sesión exitoso',
+            data: {
+              accessToken,
+              refreshToken: adminCredential.user.refreshToken,
+              user,
+            },
+            ...buildBaseResponse('/auth/login'),
+          };
+        } catch (error) {
+          const message = getFirebaseErrorMessage(error);
+          const isMissingAccount =
+            message.includes('El usuario no existe') ||
+            message.includes('Credenciales inválidas');
 
-      storage.set('user', adminUser);
-      storage.set('tokens', { accessToken, refreshToken });
+          if (!isMissingAccount) {
+            return {
+              success: false,
+              message,
+              ...buildBaseResponse('/auth/login'),
+            };
+          }
 
-      return {
-        success: true,
-        message: 'Inicio de sesión exitoso',
-        data: {
-          accessToken,
-          refreshToken,
-          user: adminUser,
-        },
-        ...buildBaseResponse('/auth/login'),
-      };
+          try {
+            const adminCredential = await createUserWithEmailAndPassword(
+              firebaseAuth,
+              DEMO_ADMIN_EMAIL,
+              DEMO_ADMIN_PASSWORD
+            );
+            await updateProfile(adminCredential.user, {
+              displayName: buildDisplayName('ADMIN', 'Samuel', 'Herrera'),
+            });
+            await persistUserProfile(adminCredential.user.uid, {
+              uid: adminCredential.user.uid,
+              email: DEMO_ADMIN_EMAIL,
+              role: 'ADMIN',
+              firstName: 'Samuel',
+              lastName: 'Herrera',
+            });
+
+            const accessToken = await adminCredential.user.getIdToken();
+            const user = await toLoginUser(adminCredential.user);
+
+            return {
+              success: true,
+              message: 'Inicio de sesión exitoso',
+              data: {
+                accessToken,
+                refreshToken: adminCredential.user.refreshToken,
+                user,
+              },
+              ...buildBaseResponse('/auth/login'),
+            };
+          } catch (creationError) {
+            return {
+              success: false,
+              message: getFirebaseErrorMessage(creationError),
+              ...buildBaseResponse('/auth/login'),
+            };
+          }
+        }
+      }
     }
 
     if (MOCK_MODE || !isFirebaseConfigured || !firebaseAuth) {
@@ -607,6 +667,64 @@ export const authService = {
         message: 'Firebase no está configurado para crear docentes.',
         ...buildBaseResponse('/auth/create-teacher'),
       };
+    }
+
+    const createTeacherWithFunction = createCallable<
+      CreateTeacherAccountRequest,
+      { teacherId: string; message?: string }
+    >('createTeacherAccount');
+
+    if (createTeacherWithFunction) {
+      try {
+        const result = await createTeacherWithFunction({
+          ...data,
+          email: data.email.trim().toLowerCase(),
+          firstName: data.firstName.trim(),
+          lastName: data.lastName.trim(),
+          phone: data.phone.trim(),
+          documentNumber: data.documentNumber.trim(),
+        });
+
+        const teacherId = result.data.teacherId;
+        const teachers = storage.get<Record<string, unknown>[]>('teachers') || [];
+        storage.set('teachers', [
+          {
+            id: teacherId,
+            firebaseUid: teacherId,
+            documentType: data.documentType,
+            documentNumber: data.documentNumber.trim(),
+            firstName: data.firstName.trim(),
+            lastName: data.lastName.trim(),
+            email: data.email.trim().toLowerCase(),
+            phone: data.phone.trim(),
+            specialties: data.specialties,
+            yearsExperience: data.yearsExperience,
+            status: data.status,
+            createdAt: new Date().toISOString(),
+          },
+          ...teachers.filter(
+            (teacher) =>
+              String(teacher.email || '').toLowerCase() !== data.email.trim().toLowerCase()
+          ),
+        ]);
+
+        return {
+          success: true,
+          message: result.data.message || 'Docente creado correctamente en Firebase.',
+          data: {
+            teacherId,
+          },
+          ...buildBaseResponse('/auth/create-teacher'),
+        };
+      } catch (error) {
+        if (!(error instanceof FirebaseError)) {
+          return {
+            success: false,
+            message: 'No se pudo crear el docente con Cloud Functions.',
+            ...buildBaseResponse('/auth/create-teacher'),
+          };
+        }
+      }
     }
 
     const secondaryApp = initializeApp(

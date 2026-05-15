@@ -178,11 +178,11 @@ export const Sidebar: React.FC = () => {
       {/* User Section */}
       <div className="p-3 border-t border-dark-200 dark:border-dark-700">
         {!sidebarCollapsed && user && (
-          <div className="flex items-center gap-3 px-3 py-2 mb-2">
+          <div className="flex items-center gap-3 px-3 py-2 mb-2 min-w-0">
             <button
               type="button"
               onClick={() => navigate('/profile')}
-              className="avatar-md hover:ring-2 hover:ring-primary-500 transition-all"
+              className="avatar-md shrink-0 hover:ring-2 hover:ring-primary-500 transition-all"
               title="Ir a perfil"
             >
               {user.profile?.photoUrl ? (
@@ -197,18 +197,18 @@ export const Sidebar: React.FC = () => {
                 </span>
               )}
             </button>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 overflow-hidden">
               <button
                 type="button"
                 onClick={() => navigate('/profile')}
-                className="text-sm font-medium text-dark-900 dark:text-white truncate hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-left text-sm font-medium text-dark-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                 title="Editar perfil"
               >
                 {user.profile?.firstName
                   ? `${user.profile.firstName} ${user.profile?.lastName ?? ''}`.trim()
                   : user.email}
               </button>
-              <p className="text-xs text-dark-500 dark:text-dark-400 truncate">
+              <p className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs text-dark-500 dark:text-dark-400">
                 {user.email}
               </p>
             </div>

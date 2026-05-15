@@ -3,6 +3,7 @@
  */
 import React, { useState, useEffect } from "react";
 import { storage } from "@/services/mockApi";
+import { ensureInstitutionData } from "@/services/institutionData";
 import {
   PlusIcon,
   PencilIcon,
@@ -35,48 +36,8 @@ const GroupsPage: React.FC = () => {
   }, []);
 
   const loadGroups = () => {
+    ensureInstitutionData();
     let data = storage.get<Group[]>("groups") || [];
-    if (data.length === 0) {
-      data = [
-        {
-          id: "1",
-          name: "Grupo A",
-          programId: "1",
-          programName: "Ballet Clásico",
-          teacherId: "1",
-          teacherName: "María García",
-          schedule: "Lun-Mié 3:00-5:00 PM",
-          capacity: 20,
-          enrolled: 15,
-          status: "ACTIVE",
-        },
-        {
-          id: "2",
-          name: "Grupo B",
-          programId: "2",
-          programName: "Guitarra",
-          teacherId: "2",
-          teacherName: "Juan Pérez",
-          schedule: "Mar-Jue 4:00-6:00 PM",
-          capacity: 15,
-          enrolled: 12,
-          status: "ACTIVE",
-        },
-        {
-          id: "3",
-          name: "Grupo C",
-          programId: "3",
-          programName: "Teatro",
-          teacherId: "3",
-          teacherName: "Ana López",
-          schedule: "Vie 2:00-5:00 PM",
-          capacity: 25,
-          enrolled: 20,
-          status: "ACTIVE",
-        },
-      ];
-      storage.set("groups", data);
-    }
     setGroups(data);
   };
 
