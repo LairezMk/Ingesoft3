@@ -1,11 +1,12 @@
 /**
  * EVALUATIONS PAGE - Evaluaciones Cualitativas
  */
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { StarIcon } from '@heroicons/react/24/solid';
 import { StarIcon as StarOutline } from '@heroicons/react/24/outline';
 import { useAuthStore } from '@/store/authStore';
 import { normalizeRole } from '@/utils/rbac';
+import { storage } from '@/services/mockApi';
 
 const EvaluationsPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -20,13 +21,32 @@ const EvaluationsPage: React.FC = () => {
   });
   const [comments, setComments] = useState('');
 
-  const students = [
-    'Ana Martínez',
-    'Carlos Rojas',
-    'Laura Gómez',
-    'Pedro Sánchez',
-    'María López',
-  ];
+  interface Evaluation {
+    id: string;
+    studentName: string;
+    date: string;
+    creativity: number;
+    technique: number;
+    participation: number;
+    progress: number;
+    average: number;
+    comments?: string;
+  }
+
+  const [evaluations, setEvaluations] = useState<Evaluation[]>(() =>
+    storage.get<Evaluation[]>('evaluations') || []
+  );
+
+  const students = useMemo(() => {
+    const data = storage.get<Array<{ firstName?: string; lastName?: string }>>('students') || [];
+    return data
+      .map((student) => `${student.firstName ?? ''} ${student.lastName ?? ''}`.trim())
+      .filter(Boolean);
+  }, []);
+
+  useEffect(() => {
+    setEvaluations(storage.get<Evaluation[]>('evaluations') || []);
+  }, []);
 
   const criteria = [
     { key: 'creativity', label: 'Creatividad' },
@@ -40,6 +60,24 @@ const EvaluationsPage: React.FC = () => {
   };
 
   const saveEvaluation = () => {
+    const average =
+      (ratings.creativity + ratings.technique + ratings.participation + ratings.progress) / 4;
+    const newEvaluation: Evaluation = {
+      id: String(Date.now()),
+      studentName: selectedStudent,
+      date: new Date().toISOString().split('T')[0],
+      creativity: ratings.creativity,
+      technique: ratings.technique,
+      participation: ratings.participation,
+      progress: ratings.progress,
+      average: Number(average.toFixed(2)),
+      comments: comments.trim() || undefined,
+    };
+
+    const updated = [newEvaluation, ...evaluations];
+    storage.set('evaluations', updated);
+    setEvaluations(updated);
+
     alert('Evaluación guardada exitosamente');
     setSelectedStudent('');
     setRatings({ creativity: 0, technique: 0, participation: 0, progress: 0 });
@@ -56,9 +94,13 @@ const EvaluationsPage: React.FC = () => {
       <div className="card p-6">
         <div className="mb-6">
           <label className="block text-sm font-medium mb-2">Estudiante</label>
-          <select value={selectedStudent} onChange={(e) => setSelectedStudent(e.target.value)} className="input w-full">
+          <select
+            value={selectedStudent}
+            onChange={(e) => setSelectedStudent(e.target.value)}
+            className="input w-full"
+          >
             <option value="">Seleccionar estudiante...</option>
-            {students.map(student => (
+            {students.map((student) => (
               <option key={student} value={student}>{student}</option>
             ))}
           </select>
@@ -116,7 +158,13 @@ const EvaluationsPage: React.FC = () => {
           </>
         )}
 
-        {!selectedStudent && (
+        {!selectedStudent && students.length === 0 && (
+          <div className="text-center py-12 text-dark-500">
+            No hay estudiantes registrados para evaluar.
+          </div>
+        )}
+
+        {!selectedStudent && students.length > 0 && (
           <div className="text-center py-12 text-dark-500">
             Selecciona un estudiante para comenzar la evaluación
           </div>
@@ -125,24 +173,24 @@ const EvaluationsPage: React.FC = () => {
 
       <div className="card p-6">
         <h3 className="text-lg font-bold mb-4">Evaluaciones Recientes</h3>
-        <div className="space-y-3">
-          {[
-            { student: 'Ana Martínez', date: '2024-03-25', avg: 4.5 },
-            { student: 'Carlos Rojas', date: '2024-03-24', avg: 4.0 },
-            { student: 'Laura Gómez', date: '2024-03-23', avg: 4.8 },
-          ].map((evaluation, idx) => (
-            <div key={idx} className="flex items-center justify-between p-4 rounded-lg border border-dark-200 dark:border-dark-700">
-              <div>
-                <p className="font-medium">{evaluation.student}</p>
-                <p className="text-sm text-dark-500">{new Date(evaluation.date).toLocaleDateString()}</p>
+        {evaluations.length === 0 ? (
+          <div className="text-center py-8 text-dark-500">Sin evaluaciones registradas.</div>
+        ) : (
+          <div className="space-y-3">
+            {evaluations.slice(0, 3).map((evaluation) => (
+              <div key={evaluation.id} className="flex items-center justify-between p-4 rounded-lg border border-dark-200 dark:border-dark-700">
+                <div>
+                  <p className="font-medium">{evaluation.studentName}</p>
+                  <p className="text-sm text-dark-500">{new Date(evaluation.date).toLocaleDateString()}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <StarIcon className="w-5 h-5 text-yellow-400" />
+                  <span className="text-lg font-bold">{evaluation.average}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <StarIcon className="w-5 h-5 text-yellow-400" />
-                <span className="text-lg font-bold">{evaluation.avg}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

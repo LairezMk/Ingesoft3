@@ -27,6 +27,7 @@ import {
   PaintBrushIcon,
 } from '@heroicons/react/24/outline';
 import { getDefaultRouteForRole } from '@/utils/rbac';
+import { digitsOnly } from '@/utils/inputFormat';
 
 interface LoginFormData {
   email: string;
@@ -417,14 +418,22 @@ export const LoginPage: React.FC = () => {
                 placeholder="3001234567"
                 icon={<PhoneIcon className="w-5 h-5" />}
                 error={registerErrors.phone?.message}
-                {...registerField('phone')}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                {...registerField('phone', {
+                  setValueAs: (value) => digitsOnly(String(value), 15),
+                })}
               />
               <Input
                 label="Documento"
                 placeholder="1234567890"
                 icon={<IdentificationIcon className="w-5 h-5" />}
                 error={registerErrors.documentNumber?.message}
-                {...registerField('documentNumber')}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                {...registerField('documentNumber', {
+                  setValueAs: (value) => digitsOnly(String(value), 20),
+                })}
               />
             </div>
 

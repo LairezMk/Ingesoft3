@@ -3,7 +3,6 @@
  */
 import React, { useState, useEffect } from "react";
 import { storage } from "@/services/mockApi";
-import { ensureInstitutionData } from "@/services/institutionData";
 import {
   PlusIcon,
   PencilIcon,
@@ -36,9 +35,7 @@ const GroupsPage: React.FC = () => {
   }, []);
 
   const loadGroups = () => {
-    ensureInstitutionData();
-    let data = storage.get<Group[]>("groups") || [];
-    setGroups(data);
+    setGroups(storage.get<Group[]>("groups") || []);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -265,6 +262,8 @@ const GroupsPage: React.FC = () => {
                         capacity: parseInt(e.target.value),
                       })
                     }
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     className="input w-full"
                     required
                   />

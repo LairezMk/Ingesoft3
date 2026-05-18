@@ -7,7 +7,6 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { firebaseDb } from "./firebase";
-import { institutionDataset, getInstitutionDatasetVersion } from "./institutionData";
 
 const STORAGE_PREFIX = "lucy_tejada_";
 
@@ -26,23 +25,9 @@ const syncedCollections = new Set([
   "user_profiles",
 ]);
 
-const localOnlyKeys = new Set([
-  "user",
-  "tokens",
-  "dataset_version",
-  "venue_calendar_dates",
-]);
+const localOnlyKeys = new Set(["user", "tokens", "venue_calendar_dates"]);
 
 const serialize = (value: unknown) => JSON.stringify(value);
-
-const readLocal = <T>(key: string): T | null => {
-  try {
-    const item = localStorage.getItem(STORAGE_PREFIX + key);
-    return item ? (JSON.parse(item) as T) : null;
-  } catch {
-    return null;
-  }
-};
 
 export const writeLocalCache = (key: string, value: unknown) => {
   try {
@@ -100,26 +85,9 @@ const hydrateCollection = async (key: string) => {
   writeLocalCache(key, items);
 };
 
-const seedFirestoreIfEmpty = async () => {
-  if (!firebaseDb) return;
-
-  const versionInCache = readLocal<string>("dataset_version");
-  const expectedVersion = getInstitutionDatasetVersion();
-
-  for (const [key, value] of Object.entries(institutionDataset)) {
-    const snapshot = await getDocs(collection(firebaseDb, key));
-    if (snapshot.empty && versionInCache !== expectedVersion) {
-      await persistCollection(key, value);
-    }
-  }
-
-  writeLocalCache("dataset_version", expectedVersion);
-};
-
 export const initializeFirestoreCache = async () => {
   if (!firebaseDb) return;
 
-  await seedFirestoreIfEmpty();
   await Promise.all([...syncedCollections].map((key) => hydrateCollection(key)));
 };
 

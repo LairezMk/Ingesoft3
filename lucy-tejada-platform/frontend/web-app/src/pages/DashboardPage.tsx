@@ -73,29 +73,9 @@ export const DashboardPage: React.FC = () => {
   const trendData = enrollmentTrend?.data || [];
   const areaData = attendanceByArea?.data || [];
 
-  // Sample data for demo when API is not available
-  const sampleTrendData = [
-    { period: '2024-01', count: 45 },
-    { period: '2024-02', count: 52 },
-    { period: '2024-03', count: 61 },
-    { period: '2024-04', count: 58 },
-    { period: '2024-05', count: 72 },
-    { period: '2024-06', count: 85 },
-  ];
-
-  const sampleProgramsData = [
-    { programName: 'Danza', enrollments: 120, area: 'DANZA' },
-    { programName: 'Música', enrollments: 95, area: 'MUSICA' },
-    { programName: 'Teatro', enrollments: 75, area: 'TEATRO' },
-    { programName: 'Artes Visuales', enrollments: 60, area: 'ARTES_VISUALES' },
-  ];
-
-  const sampleAreaData = [
-    { area: 'Danza', attendanceRate: 92 },
-    { area: 'Música', attendanceRate: 88 },
-    { area: 'Teatro', attendanceRate: 85 },
-    { area: 'Artes Visuales', attendanceRate: 90 },
-  ];
+  const hasTrendData = trendData.length > 0;
+  const hasProgramsData = programsData.length > 0;
+  const hasAreaData = areaData.length > 0;
 
   const quickActions: Array<{
     icon: string;
@@ -138,29 +118,29 @@ export const DashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Estudiantes"
-          value={statsData?.totalStudents || 350}
-          change={{ value: 12, type: 'increase' }}
+          value={statsData?.totalStudents ?? 0}
+          change={{ value: 0, type: 'increase' }}
           icon={<UserGroupIcon className="w-6 h-6" />}
           loading={statsLoading}
         />
         <StatCard
           title="Estudiantes Activos"
-          value={statsData?.activeStudents || 285}
-          change={{ value: 8, type: 'increase' }}
+          value={statsData?.activeStudents ?? 0}
+          change={{ value: 0, type: 'increase' }}
           icon={<CheckCircleIcon className="w-6 h-6" />}
           iconColor="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
           loading={statsLoading}
         />
         <StatCard
           title="Total Docentes"
-          value={statsData?.totalTeachers || 24}
+          value={statsData?.totalTeachers ?? 0}
           icon={<AcademicCapIcon className="w-6 h-6" />}
           iconColor="bg-secondary-100 dark:bg-secondary-900/30 text-secondary-600 dark:text-secondary-400"
           loading={statsLoading}
         />
         <StatCard
           title="Programas Activos"
-          value={statsData?.activePrograms || 8}
+          value={statsData?.activePrograms ?? 0}
           icon={<BookOpenIcon className="w-6 h-6" />}
           iconColor="bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400"
           loading={statsLoading}
@@ -171,29 +151,29 @@ export const DashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Matrículas Activas"
-          value={statsData?.activeEnrollments || 320}
+          value={statsData?.activeEnrollments ?? 0}
           icon={<CalendarDaysIcon className="w-6 h-6" />}
           iconColor="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
           loading={statsLoading}
         />
         <StatCard
           title="Tasa de Asistencia"
-          value={`${statsData?.attendanceRate || 88}%`}
-          change={{ value: 3, type: 'increase' }}
+          value={`${statsData?.attendanceRate ?? 0}%`}
+          change={{ value: 0, type: 'increase' }}
           icon={<ChartBarIcon className="w-6 h-6" />}
           iconColor="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
           loading={statsLoading}
         />
         <StatCard
           title="Reservas Pendientes"
-          value={statsData?.upcomingReservations || 5}
+          value={statsData?.upcomingReservations ?? 0}
           icon={<ClockIcon className="w-6 h-6" />}
           iconColor="bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
           loading={statsLoading}
         />
         <StatCard
           title="Alertas Mantenimiento"
-          value={statsData?.maintenanceAlerts || 2}
+          value={statsData?.maintenanceAlerts ?? 0}
           icon={<ExclamationCircleIcon className="w-6 h-6" />}
           iconColor="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
           loading={statsLoading}
@@ -213,43 +193,49 @@ export const DashboardPage: React.FC = () => {
             Tendencia de Matrículas
           </h3>
           <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData.length > 0 ? trendData : sampleTrendData}>
-                <defs>
-                  <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                <XAxis
-                  dataKey="period"
-                  tick={{ fill: '#64748B', fontSize: 12 }}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fill: '#64748B', fontSize: 12 }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1E293B',
-                    border: 'none',
-                    borderRadius: '12px',
-                    color: '#fff',
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="count"
-                  stroke="#8B5CF6"
-                  strokeWidth={3}
-                  fill="url(#colorCount)"
-                  name="Matrículas"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {hasTrendData ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trendData}>
+                  <defs>
+                    <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                  <XAxis
+                    dataKey="period"
+                    tick={{ fill: '#64748B', fontSize: 12 }}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: '#64748B', fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1E293B',
+                      border: 'none',
+                      borderRadius: '12px',
+                      color: '#fff',
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="count"
+                    stroke="#8B5CF6"
+                    strokeWidth={3}
+                    fill="url(#colorCount)"
+                    name="Matrículas"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-dark-500">
+                Sin datos disponibles
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -264,33 +250,39 @@ export const DashboardPage: React.FC = () => {
             Matrículas por Programa
           </h3>
           <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={programsData.length > 0 ? programsData : sampleProgramsData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="enrollments"
-                  nameKey="programName"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {(programsData.length > 0 ? programsData : sampleProgramsData).map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1E293B',
-                    border: 'none',
-                    borderRadius: '12px',
-                    color: '#fff',
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            {hasProgramsData ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={programsData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="enrollments"
+                    nameKey="programName"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {programsData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1E293B',
+                      border: 'none',
+                      borderRadius: '12px',
+                      color: '#fff',
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-dark-500">
+                Sin datos disponibles
+              </div>
+            )}
           </div>
         </motion.div>
       </div>
@@ -306,38 +298,44 @@ export const DashboardPage: React.FC = () => {
           Asistencia por Área Artística
         </h3>
         <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={areaData.length > 0 ? areaData : sampleAreaData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-              <XAxis
-                dataKey="area"
-                tick={{ fill: '#64748B', fontSize: 12 }}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fill: '#64748B', fontSize: 12 }}
-                tickLine={false}
-                axisLine={false}
-                domain={[0, 100]}
-                unit="%"
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#1E293B',
-                  border: 'none',
-                  borderRadius: '12px',
-                  color: '#fff',
-                }}
-              />
-              <Legend />
-              <Bar
-                dataKey="attendanceRate"
-                name="Tasa de Asistencia"
-                fill="#8B5CF6"
-                radius={[8, 8, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          {hasAreaData ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={areaData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <XAxis
+                  dataKey="area"
+                  tick={{ fill: '#64748B', fontSize: 12 }}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fill: '#64748B', fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={false}
+                  domain={[0, 100]}
+                  unit="%"
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1E293B',
+                    border: 'none',
+                    borderRadius: '12px',
+                    color: '#fff',
+                  }}
+                />
+                <Legend />
+                <Bar
+                  dataKey="attendanceRate"
+                  name="Tasa de Asistencia"
+                  fill="#8B5CF6"
+                  radius={[8, 8, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-full flex items-center justify-center text-dark-500">
+              Sin datos disponibles
+            </div>
+          )}
         </div>
       </motion.div>
 

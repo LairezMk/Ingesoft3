@@ -37,43 +37,7 @@ const EnrollmentsPage: React.FC = () => {
   }, []);
 
   const loadEnrollments = () => {
-    let data = storage.get<Enrollment[]>("enrollments") || [];
-    if (data.length === 0) {
-      data = [
-        {
-          id: "1",
-          studentId: "1",
-          studentName: "Ana Martínez",
-          groupId: "1",
-          groupName: "Grupo A",
-          programName: "Ballet Clásico",
-          enrollmentDate: "2024-01-15",
-          status: "ACTIVE",
-        },
-        {
-          id: "2",
-          studentId: "2",
-          studentName: "Carlos Rojas",
-          groupId: "2",
-          groupName: "Grupo B",
-          programName: "Guitarra",
-          enrollmentDate: "2024-01-20",
-          status: "ACTIVE",
-        },
-        {
-          id: "3",
-          studentId: "3",
-          studentName: "Laura Gómez",
-          groupId: "3",
-          groupName: "Grupo C",
-          programName: "Teatro",
-          enrollmentDate: "2024-02-01",
-          status: "PENDING",
-        },
-      ];
-      storage.set("enrollments", data);
-    }
-    setEnrollments(data);
+    setEnrollments(storage.get<Enrollment[]>("enrollments") || []);
   };
 
   const studentFullName =

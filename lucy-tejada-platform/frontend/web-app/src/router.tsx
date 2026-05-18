@@ -84,7 +84,16 @@ const PublicRoute: React.FC = () => {
 };
 
 const HomeRedirect: React.FC = () => {
-  const { user } = useAuthStore();
+  const { isAuthenticated, isLoading, user } = useAuthStore();
+
+  if (isLoading) {
+    return <PageLoader />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/programs" replace />;
+  }
+
   return <Navigate to={getDefaultRouteForRole(user?.role)} replace />;
 };
 

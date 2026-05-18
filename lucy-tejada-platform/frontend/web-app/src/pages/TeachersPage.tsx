@@ -7,8 +7,8 @@
 import React, { useState, useEffect } from "react";
 import { storage } from "@/services/mockApi";
 import { authService } from "@/services/authService";
-import { ensureInstitutionData } from "@/services/institutionData";
 import toast from "react-hot-toast";
+import { digitsOnly } from "@/utils/inputFormat";
 import {
   PlusIcon,
   PencilIcon,
@@ -64,9 +64,7 @@ const TeachersPage: React.FC = () => {
   }, [searchTerm, teachers]);
 
   const loadTeachers = () => {
-    ensureInstitutionData();
-    let data = storage.get<Teacher[]>("teachers") || [];
-    setTeachers(data);
+    setTeachers(storage.get<Teacher[]>("teachers") || []);
   };
 
   const handleCreate = () => {
@@ -391,9 +389,11 @@ const TeachersPage: React.FC = () => {
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          documentNumber: e.target.value,
+                          documentNumber: digitsOnly(e.target.value, 20),
                         })
                       }
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       className="input w-full"
                       required
                     />
@@ -423,8 +423,13 @@ const TeachersPage: React.FC = () => {
                       type="tel"
                       value={formData.phone || ""}
                       onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
+                        setFormData({
+                          ...formData,
+                          phone: digitsOnly(e.target.value, 15),
+                        })
                       }
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       className="input w-full"
                       required
                     />
@@ -468,6 +473,8 @@ const TeachersPage: React.FC = () => {
                           yearsExperience: parseInt(e.target.value),
                         })
                       }
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       className="input w-full"
                       required
                     />

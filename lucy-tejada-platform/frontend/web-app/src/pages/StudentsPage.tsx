@@ -5,7 +5,13 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { mockApi, storage } from "@/services/mockApi";
+import { storage } from "@/services/mockApi";
+import {
+  digitsOnly,
+  formatDateInput,
+  toDisplayDateFromIso,
+  toIsoDateFromDisplay,
+} from "@/utils/inputFormat";
 import {
   PlusIcon,
   PencilIcon,
@@ -62,13 +68,10 @@ const StudentsPage: React.FC = () => {
     }
   }, [searchTerm, students]);
 
-  const loadStudents = async () => {
+  const loadStudents = () => {
     setLoading(true);
     try {
-      const response = await mockApi.getStudents(1, 100);
-      setStudents(response.data?.data || []);
-    } catch (error) {
-      console.error("Error loading students:", error);
+      setStudents(storage.get<Student[]>("students") || []);
     } finally {
       setLoading(false);
     }
@@ -86,36 +89,63 @@ const StudentsPage: React.FC = () => {
 
   const handleEdit = (student: Student) => {
     setEditingStudent(student);
-    setFormData(student);
+    setFormData({
+      ...student,
+      birthDate: toDisplayDateFromIso(student.birthDate),
+    });
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (window.confirm("¿Estás seguro de eliminar este estudiante?")) {
-      await mockApi.deleteStudent(id);
+      const updated = students.filter((student) => student.id !== id);
+      storage.set("students", updated);
       loadStudents();
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (editingStudent) {
-        await mockApi.updateStudent(editingStudent.id, formData);
-      } else {
-        await mockApi.createStudent(formData);
+      const normalizedBirthDate = toIsoDateFromDisplay(String(formData.birthDate || ""));
+      if (!normalizedBirthDate) {
+        alert("Fecha inválida. Usa el formato DD/MM/AA.");
+        return;
       }
+
+      if (editingStudent) {
+        const updated = students.map((student) =>
+          student.id === editingStudent.id
+            ? { ...student, ...formData, birthDate: normalizedBirthDate }
+            : student,
+        );
+        storage.set("students", updated);
+      } else {
+        const newStudent = {
+          ...formData,
+          id: String(Date.now()),
+          birthDate: normalizedBirthDate,
+          createdAt: new Date().toISOString(),
+          enrollmentStatus: formData.enrollmentStatus || "ACTIVE",
+        } as Student;
+        storage.set("students", [newStudent, ...students]);
+      }
+
       setIsModalOpen(false);
       loadStudents();
-    } catch (error) {
-      console.error("Error saving student:", error);
-      alert("Error al guardar estudiante");
     } finally {
       setLoading(false);
     }
   };
+
+  const newThisMonth = students.filter((student) => {
+    if (!student.createdAt) return false;
+    const created = new Date(student.createdAt);
+    const now = new Date();
+    return created.getFullYear() === now.getFullYear() && created.getMonth() === now.getMonth();
+  }).length;
 
   return (
     <div className="space-y-6">
@@ -191,7 +221,7 @@ const StudentsPage: React.FC = () => {
             </div>
             <div>
               <p className="text-sm text-dark-500">Nuevos (mes)</p>
-              <p className="text-2xl font-bold text-warning-600">12</p>
+              <p className="text-2xl font-bold text-warning-600">{newThisMonth}</p>
             </div>
           </div>
         </div>
@@ -355,9 +385,11 @@ const StudentsPage: React.FC = () => {
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          documentNumber: e.target.value,
+                          documentNumber: digitsOnly(e.target.value, 20),
                         })
                       }
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       className="input w-full"
                       required
                     />
@@ -418,8 +450,13 @@ const StudentsPage: React.FC = () => {
                       type="tel"
                       value={formData.phone || ""}
                       onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
+                        setFormData({
+                          ...formData,
+                          phone: digitsOnly(e.target.value, 15),
+                        })
                       }
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       className="input w-full"
                       required
                     />
@@ -432,11 +469,17 @@ const StudentsPage: React.FC = () => {
                       Fecha de Nacimiento
                     </label>
                     <input
-                      type="date"
+                      type="text"
                       value={formData.birthDate || ""}
                       onChange={(e) =>
-                        setFormData({ ...formData, birthDate: e.target.value })
+                        setFormData({
+                          ...formData,
+                          birthDate: formatDateInput(e.target.value),
+                        })
                       }
+                      inputMode="numeric"
+                      pattern="\d{2}/\d{2}/\d{2}"
+                      placeholder="DD/MM/AA"
                       className="input w-full"
                       required
                     />

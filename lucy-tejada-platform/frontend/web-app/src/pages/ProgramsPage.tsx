@@ -43,19 +43,10 @@ const ProgramsPage: React.FC = () => {
   const [editing, setEditing] = useState<Program | null>(null);
   const [formData, setFormData] = useState<Partial<Program>>({});
   const [teacherOptions, setTeacherOptions] = useState<TeacherOption[]>([]);
-  const [isEnrollmentModalOpen, setIsEnrollmentModalOpen] = useState(false);
-  const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
-  const [registrationForm, setRegistrationForm] = useState({
-    firstName: "",
-    lastName: "",
-    documentNumber: "",
-    email: "",
-    phone: "",
-  });
   const { user } = useAuthStore();
   const role = normalizeRole(user?.role) ?? "VISITANTE";
   const canManagePrograms = role === "ADMIN" || role === "DOCENTE";
-  const canRequestEnrollment = role === "ESTUDIANTE" || role === "VISITANTE";
+  const canRequestEnrollment = role === "ESTUDIANTE";
   const canEditProgram = (program: Program) =>
     role === "ADMIN" || (role === "DOCENTE" && program.teacherId === user?.id);
 
@@ -69,65 +60,7 @@ const ProgramsPage: React.FC = () => {
   }, []);
 
   const loadPrograms = () => {
-    let data = storage.get<Program[]>("programs") || [];
-    if (data.length === 0) {
-      data = [
-        {
-          id: "1",
-          name: "Ballet Clásico",
-          area: "Danza",
-          level: "Básico",
-          duration: 12,
-          description: "Introducción al ballet",
-          status: "ACTIVE",
-          maxStudents: 20,
-          teacherId: "1",
-          teacherName: "Docente 1",
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: "2",
-          name: "Guitarra Eléctrica",
-          area: "Música",
-          level: "Intermedio",
-          duration: 16,
-          description: "Técnicas modernas de guitarra",
-          status: "ACTIVE",
-          maxStudents: 15,
-          teacherId: "2",
-          teacherName: "Docente 2",
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: "3",
-          name: "Teatro Experimental",
-          area: "Teatro",
-          level: "Avanzado",
-          duration: 20,
-          description: "Técnicas avanzadas de actuación",
-          status: "ACTIVE",
-          maxStudents: 25,
-          teacherId: "3",
-          teacherName: "Docente 3",
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: "4",
-          name: "Pintura al Óleo",
-          area: "Artes Visuales",
-          level: "Básico",
-          duration: 14,
-          description: "Fundamentos de pintura",
-          status: "ACTIVE",
-          maxStudents: 12,
-          teacherId: "4",
-          teacherName: "Docente 4",
-          createdAt: new Date().toISOString(),
-        },
-      ];
-      storage.set("programs", data);
-    }
-    setPrograms(data);
+    setPrograms(storage.get<Program[]>("programs") || []);
   };
 
   const filtered = programs.filter(
@@ -196,57 +129,6 @@ const ProgramsPage: React.FC = () => {
     toast.success("Solicitud de matrícula enviada.");
   };
 
-  const handleOpenVisitorEnrollment = (program: Program) => {
-    if (!user) {
-      toast("Debes iniciar sesión para matricularte. Al ingresar tendrás perfil de estudiante.");
-      navigate("/login");
-      return;
-    }
-
-    setSelectedProgram(program);
-    setRegistrationForm({
-      firstName: "",
-      lastName: "",
-      documentNumber: "",
-      email: "",
-      phone: "",
-    });
-    setIsEnrollmentModalOpen(true);
-  };
-
-  const handleVisitorEnrollmentRequest = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!selectedProgram) return;
-    if (!registrationForm.firstName.trim() || !registrationForm.lastName.trim() || !registrationForm.email.trim()) {
-      toast.error("Completa los datos básicos para registrarte como estudiante.");
-      return;
-    }
-
-    const students = storage.get<any[]>("students") || [];
-    const newStudent = {
-      id: String(Date.now()),
-      documentType: "CC",
-      documentNumber: registrationForm.documentNumber.trim() || String(Date.now()).slice(-8),
-      firstName: registrationForm.firstName.trim(),
-      lastName: registrationForm.lastName.trim(),
-      email: registrationForm.email.trim(),
-      phone: registrationForm.phone.trim(),
-      birthDate: "2005-01-01",
-      gender: "MALE",
-      city: "Pereira",
-      address: "Sin dirección registrada",
-      enrollmentStatus: "ACTIVE",
-      createdAt: new Date().toISOString(),
-    };
-    storage.set("students", [newStudent, ...students]);
-    createEnrollmentRequest(
-      `${newStudent.firstName} ${newStudent.lastName}`,
-      selectedProgram,
-      newStudent.email,
-    );
-    setIsEnrollmentModalOpen(false);
-    toast.success("Registro básico completado. Tu solicitud de matrícula quedó pendiente.");
-  };
 
   const handleDelete = (id: string) => {
     if (window.confirm("¿Eliminar programa?")) {
@@ -370,9 +252,9 @@ const ProgramsPage: React.FC = () => {
                 </p>
               </div>
             </div>
-            {!canManagePrograms && canRequestEnrollment && (
+            {!canManagePrograms && (
               <div className="mt-4">
-                {role === "ESTUDIANTE" ? (
+                {canRequestEnrollment ? (
                   <button
                     className="btn-primary w-full"
                     onClick={() => handleStudentEnrollmentRequest(program)}
@@ -381,10 +263,10 @@ const ProgramsPage: React.FC = () => {
                   </button>
                 ) : (
                   <button
-                    className="btn-primary w-full"
-                    onClick={() => handleOpenVisitorEnrollment(program)}
+                    className="btn-secondary w-full"
+                    onClick={() => navigate("/login")}
                   >
-                    Solicitar matrícula
+                    Inicia sesión para matricularte
                   </button>
                 )}
               </div>
@@ -475,6 +357,8 @@ const ProgramsPage: React.FC = () => {
                           duration: parseInt(e.target.value),
                         })
                       }
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       className="input w-full"
                       required
                     />
@@ -493,6 +377,8 @@ const ProgramsPage: React.FC = () => {
                           maxStudents: parseInt(e.target.value),
                         })
                       }
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       className="input w-full"
                       required
                     />
@@ -574,78 +460,6 @@ const ProgramsPage: React.FC = () => {
                   </button>
                   <button type="submit" className="btn-primary">
                     {editing ? "Actualizar" : "Crear"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-      {isEnrollmentModalOpen && selectedProgram && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4">
-            <div className="fixed inset-0 bg-black opacity-30" onClick={() => setIsEnrollmentModalOpen(false)} />
-            <div className="relative bg-white dark:bg-dark-800 rounded-2xl shadow-xl max-w-xl w-full p-6">
-              <h3 className="text-2xl font-bold mb-2">Registro básico como estudiante</h3>
-              <p className="text-sm text-dark-500 mb-4">
-                Curso solicitado: {selectedProgram.name}
-              </p>
-              <form onSubmit={handleVisitorEnrollmentRequest} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <input
-                    className="input w-full"
-                    placeholder="Nombre"
-                    value={registrationForm.firstName}
-                    onChange={(event) =>
-                      setRegistrationForm((previous) => ({ ...previous, firstName: event.target.value }))
-                    }
-                    required
-                  />
-                  <input
-                    className="input w-full"
-                    placeholder="Apellido"
-                    value={registrationForm.lastName}
-                    onChange={(event) =>
-                      setRegistrationForm((previous) => ({ ...previous, lastName: event.target.value }))
-                    }
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <input
-                    className="input w-full"
-                    placeholder="Documento"
-                    value={registrationForm.documentNumber}
-                    onChange={(event) =>
-                      setRegistrationForm((previous) => ({ ...previous, documentNumber: event.target.value }))
-                    }
-                  />
-                  <input
-                    type="tel"
-                    className="input w-full"
-                    placeholder="Teléfono"
-                    value={registrationForm.phone}
-                    onChange={(event) =>
-                      setRegistrationForm((previous) => ({ ...previous, phone: event.target.value }))
-                    }
-                  />
-                </div>
-                <input
-                  type="email"
-                  className="input w-full"
-                  placeholder="Correo electrónico"
-                  value={registrationForm.email}
-                  onChange={(event) =>
-                    setRegistrationForm((previous) => ({ ...previous, email: event.target.value }))
-                  }
-                  required
-                />
-                <div className="flex justify-end gap-3">
-                  <button type="button" onClick={() => setIsEnrollmentModalOpen(false)} className="btn-secondary">
-                    Cancelar
-                  </button>
-                  <button type="submit" className="btn-primary">
-                    Solicitar matrícula
                   </button>
                 </div>
               </form>

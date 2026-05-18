@@ -4,8 +4,8 @@
  * ============================================
  */
 
-import apiClient, { ApiResponse } from "./api";
-import { MOCK_MODE, storage } from "./mockApi";
+import { ApiResponse } from "./api";
+import { storage } from "./mockApi";
 
 export interface DashboardStats {
   totalStudents: number;
@@ -81,15 +81,6 @@ const getLocalCollections = () => {
   const contracts = storage.get<any[]>("contracts") || [];
   const maintenance = storage.get<any[]>("maintenance_records") || [];
 
-  const hasAnyData =
-    students.length > 0 ||
-    teachers.length > 0 ||
-    programs.length > 0 ||
-    enrollments.length > 0 ||
-    reservations.length > 0 ||
-    contracts.length > 0 ||
-    maintenance.length > 0;
-
   return {
     students,
     teachers,
@@ -98,7 +89,6 @@ const getLocalCollections = () => {
     reservations,
     contracts,
     maintenance,
-    hasAnyData,
   };
 };
 
@@ -268,16 +258,10 @@ export const dashboardService = {
    * Obtener estadísticas generales
    */
   getStats: async (): Promise<ApiResponse<DashboardStats>> => {
-    const localCollections = getLocalCollections();
-    if (localCollections.hasAnyData || MOCK_MODE) {
-      return createLocalResponse(
-        calculateLocalStats(),
-        "Estadísticas obtenidas desde datos locales",
-      );
-    }
-    const response =
-      await apiClient.get<ApiResponse<DashboardStats>>("/dashboard/stats");
-    return response.data;
+    return createLocalResponse(
+      calculateLocalStats(),
+      "Estadísticas obtenidas desde Firestore",
+    );
   },
 
   /**
@@ -286,17 +270,10 @@ export const dashboardService = {
   getEnrollmentsByProgram: async (): Promise<
     ApiResponse<EnrollmentsByProgram[]>
   > => {
-    const localCollections = getLocalCollections();
-    if (localCollections.hasAnyData || MOCK_MODE) {
-      return createLocalResponse(
-        calculateLocalEnrollmentsByProgram(),
-        "Matrículas por programa obtenidas desde datos locales",
-      );
-    }
-    const response = await apiClient.get<ApiResponse<EnrollmentsByProgram[]>>(
-      "/dashboard/enrollments-by-program",
+    return createLocalResponse(
+      calculateLocalEnrollmentsByProgram(),
+      "Matrículas por programa obtenidas desde Firestore",
     );
-    return response.data;
   },
 
   /**
@@ -305,17 +282,10 @@ export const dashboardService = {
   getGeographicDistribution: async (): Promise<
     ApiResponse<GeographicDistribution[]>
   > => {
-    const localCollections = getLocalCollections();
-    if (localCollections.hasAnyData || MOCK_MODE) {
-      return createLocalResponse(
-        calculateLocalGeographicDistribution(),
-        "Distribución geográfica obtenida desde datos locales",
-      );
-    }
-    const response = await apiClient.get<ApiResponse<GeographicDistribution[]>>(
-      "/dashboard/geographic-distribution",
+    return createLocalResponse(
+      calculateLocalGeographicDistribution(),
+      "Distribución geográfica obtenida desde Firestore",
     );
-    return response.data;
   },
 
   /**
@@ -324,26 +294,17 @@ export const dashboardService = {
   getDropoutAnalysis: async (
     year?: number,
   ): Promise<ApiResponse<DropoutAnalysis[]>> => {
-    const localCollections = getLocalCollections();
-    if (localCollections.hasAnyData || MOCK_MODE) {
-      const enrollments = localCollections.enrollments || [];
-      const period = year ? `${year}` : `${new Date().getFullYear()}`;
-      const totalEnrollments = enrollments.length;
-      const withdrawals = enrollments.filter((item) => item?.status === "CANCELLED").length;
-      const dropoutRate =
-        totalEnrollments > 0 ? round((withdrawals / totalEnrollments) * 100) : 0;
+    const enrollments = getLocalCollections().enrollments || [];
+    const period = year ? `${year}` : `${new Date().getFullYear()}`;
+    const totalEnrollments = enrollments.length;
+    const withdrawals = enrollments.filter((item) => item?.status === "CANCELLED").length;
+    const dropoutRate =
+      totalEnrollments > 0 ? round((withdrawals / totalEnrollments) * 100) : 0;
 
-      return createLocalResponse(
-        [{ period, totalEnrollments, withdrawals, dropoutRate }],
-        "Análisis de deserción obtenido desde datos locales",
-      );
-    }
-    const params = year ? { year } : {};
-    const response = await apiClient.get<ApiResponse<DropoutAnalysis[]>>(
-      "/dashboard/dropout-analysis",
-      { params },
+    return createLocalResponse(
+      [{ period, totalEnrollments, withdrawals, dropoutRate }],
+      "Análisis de deserción obtenido desde Firestore",
     );
-    return response.data;
   },
 
   /**
@@ -352,35 +313,20 @@ export const dashboardService = {
   getEnrollmentTrend: async (
     months = 12,
   ): Promise<ApiResponse<EnrollmentTrend[]>> => {
-    const localCollections = getLocalCollections();
-    if (localCollections.hasAnyData || MOCK_MODE) {
-      return createLocalResponse(
-        calculateLocalEnrollmentTrend(months),
-        "Tendencia de matrículas obtenida desde datos locales",
-      );
-    }
-    const response = await apiClient.get<ApiResponse<EnrollmentTrend[]>>(
-      "/dashboard/enrollment-trend",
-      { params: { months } },
+    return createLocalResponse(
+      calculateLocalEnrollmentTrend(months),
+      "Tendencia de matrículas obtenida desde Firestore",
     );
-    return response.data;
   },
 
   /**
    * Obtener asistencia por área
    */
   getAttendanceByArea: async (): Promise<ApiResponse<AttendanceByArea[]>> => {
-    const localCollections = getLocalCollections();
-    if (localCollections.hasAnyData || MOCK_MODE) {
-      return createLocalResponse(
-        calculateLocalAttendanceByArea(),
-        "Asistencia por área obtenida desde datos locales",
-      );
-    }
-    const response = await apiClient.get<ApiResponse<AttendanceByArea[]>>(
-      "/dashboard/attendance-by-area",
+    return createLocalResponse(
+      calculateLocalAttendanceByArea(),
+      "Asistencia por área obtenida desde Firestore",
     );
-    return response.data;
   },
 };
 

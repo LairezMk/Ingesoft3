@@ -12,7 +12,6 @@ import { router } from './router';
 import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
 import { normalizeRole } from '@/utils/rbac';
-import { ensureInstitutionData } from '@/services/institutionData';
 import { initializeRealDataLayer } from '@/services/mockApi';
 
 // Create a client
@@ -32,7 +31,6 @@ export const App: React.FC = () => {
 
   // Initialize dark mode from localStorage
   useEffect(() => {
-    ensureInstitutionData();
     void initializeRealDataLayer();
 
     const storedMode = localStorage.getItem('ui-storage');

@@ -21,7 +21,7 @@ import { ApiResponse } from './api';
 import { firebaseAuth, firebaseConfig, firebaseDb, isFirebaseConfigured } from './firebase';
 import { createCallable } from './firebaseFunctions';
 import { type AppRole } from '@/utils/rbac';
-import { MOCK_MODE, mockApi, storage } from './mockApi';
+import { storage } from './mockApi';
 
 export interface LoginRequest {
   email: string;
@@ -85,8 +85,6 @@ const adminEmails = new Set(
     .filter(Boolean)
 );
 
-const DEMO_ADMIN_EMAIL = 'samuel.herrera@utp.edu.co';
-const DEMO_ADMIN_PASSWORD = 'Lucy123.';
 const ROLE_PREFIX_REGEX = /^\[(ADMIN|DOCENTE|ESTUDIANTE|VISITANTE)\]\s*/i;
 
 const getRoleForEmail = (email?: string | null): AppRole => {
@@ -274,94 +272,12 @@ export const authService = {
    * Iniciar sesión
    */
   login: async (data: LoginRequest): Promise<ApiResponse<LoginResponse>> => {
-    if (
-      data.email.trim().toLowerCase() === DEMO_ADMIN_EMAIL &&
-      data.password === DEMO_ADMIN_PASSWORD
-    ) {
-      if (isFirebaseConfigured && firebaseAuth) {
-        try {
-          const adminCredential = await signInWithEmailAndPassword(
-            firebaseAuth,
-            DEMO_ADMIN_EMAIL,
-            DEMO_ADMIN_PASSWORD
-          );
-          await persistUserProfile(adminCredential.user.uid, {
-            uid: adminCredential.user.uid,
-            email: DEMO_ADMIN_EMAIL,
-            role: 'ADMIN',
-            firstName: 'Samuel',
-            lastName: 'Herrera',
-          });
-          const accessToken = await adminCredential.user.getIdToken();
-          const user = await toLoginUser(adminCredential.user);
-
-          return {
-            success: true,
-            message: 'Inicio de sesión exitoso',
-            data: {
-              accessToken,
-              refreshToken: adminCredential.user.refreshToken,
-              user,
-            },
-            ...buildBaseResponse('/auth/login'),
-          };
-        } catch (error) {
-          const message = getFirebaseErrorMessage(error);
-          const isMissingAccount =
-            message.includes('El usuario no existe') ||
-            message.includes('Credenciales inválidas');
-
-          if (!isMissingAccount) {
-            return {
-              success: false,
-              message,
-              ...buildBaseResponse('/auth/login'),
-            };
-          }
-
-          try {
-            const adminCredential = await createUserWithEmailAndPassword(
-              firebaseAuth,
-              DEMO_ADMIN_EMAIL,
-              DEMO_ADMIN_PASSWORD
-            );
-            await updateProfile(adminCredential.user, {
-              displayName: buildDisplayName('ADMIN', 'Samuel', 'Herrera'),
-            });
-            await persistUserProfile(adminCredential.user.uid, {
-              uid: adminCredential.user.uid,
-              email: DEMO_ADMIN_EMAIL,
-              role: 'ADMIN',
-              firstName: 'Samuel',
-              lastName: 'Herrera',
-            });
-
-            const accessToken = await adminCredential.user.getIdToken();
-            const user = await toLoginUser(adminCredential.user);
-
-            return {
-              success: true,
-              message: 'Inicio de sesión exitoso',
-              data: {
-                accessToken,
-                refreshToken: adminCredential.user.refreshToken,
-                user,
-              },
-              ...buildBaseResponse('/auth/login'),
-            };
-          } catch (creationError) {
-            return {
-              success: false,
-              message: getFirebaseErrorMessage(creationError),
-              ...buildBaseResponse('/auth/login'),
-            };
-          }
-        }
-      }
-    }
-
-    if (MOCK_MODE || !isFirebaseConfigured || !firebaseAuth) {
-      return mockApi.login(data.email, data.password) as Promise<ApiResponse<LoginResponse>>;
+    if (!isFirebaseConfigured || !firebaseAuth) {
+      return {
+        success: false,
+        message: 'Firebase no está configurado para autenticación.',
+        ...buildBaseResponse('/auth/login'),
+      };
     }
 
     try {
@@ -396,8 +312,12 @@ export const authService = {
    * Cerrar sesión
    */
   logout: async (_allDevices = false): Promise<ApiResponse> => {
-    if (MOCK_MODE || !isFirebaseConfigured || !firebaseAuth) {
-      return mockApi.logout();
+    if (!isFirebaseConfigured || !firebaseAuth) {
+      return {
+        success: false,
+        message: 'Firebase no está configurado para autenticación.',
+        ...buildBaseResponse('/auth/logout'),
+      };
     }
 
     try {
@@ -420,8 +340,12 @@ export const authService = {
    * Obtener usuario actual
    */
   getCurrentUser: async (): Promise<ApiResponse<LoginResponse["user"]>> => {
-    if (MOCK_MODE || !isFirebaseConfigured || !firebaseAuth) {
-      return mockApi.getCurrentUser() as Promise<ApiResponse<LoginResponse["user"]>>;
+    if (!isFirebaseConfigured || !firebaseAuth) {
+      return {
+        success: false,
+        message: 'Firebase no está configurado para autenticación.',
+        ...buildBaseResponse('/auth/me'),
+      };
     }
 
     const currentUser = firebaseAuth.currentUser;
@@ -447,29 +371,10 @@ export const authService = {
   refreshTokens: async (
     refreshToken: string,
   ): Promise<ApiResponse<LoginResponse>> => {
-    if (MOCK_MODE || !isFirebaseConfigured || !firebaseAuth) {
-      const user = storage.get<LoginResponse['user']>('user');
-      const tokens = storage.get<{
-        accessToken: string;
-        refreshToken: string;
-      }>('tokens');
-
-      if (!user || !tokens) {
-        return {
-          success: false,
-          message: 'No hay usuario autenticado.',
-          ...buildBaseResponse('/auth/refresh'),
-        };
-      }
-
+    if (!isFirebaseConfigured || !firebaseAuth) {
       return {
-        success: true,
-        message: 'Token renovado',
-        data: {
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken || refreshToken,
-          user,
-        },
+        success: false,
+        message: 'Firebase no está configurado para autenticación.',
         ...buildBaseResponse('/auth/refresh'),
       };
     }
@@ -508,10 +413,10 @@ export const authService = {
    * Cambiar contraseña
    */
   changePassword: async (data: ChangePasswordRequest): Promise<ApiResponse> => {
-    if (MOCK_MODE || !isFirebaseConfigured || !firebaseAuth) {
+    if (!isFirebaseConfigured || !firebaseAuth) {
       return {
-        success: true,
-        message: 'Contraseña cambiada exitosamente',
+        success: false,
+        message: 'Firebase no está configurado para autenticación.',
         ...buildBaseResponse('/auth/change-password'),
       };
     }
@@ -552,12 +457,10 @@ export const authService = {
    * Validar token
    */
   validateToken: async (): Promise<ApiResponse<{ valid: boolean }>> => {
-    if (MOCK_MODE || !isFirebaseConfigured || !firebaseAuth) {
-      const valid = Boolean(storage.get('user'));
+    if (!isFirebaseConfigured || !firebaseAuth) {
       return {
-        success: true,
-        message: valid ? 'Token válido' : 'Token inválido',
-        data: { valid },
+        success: false,
+        message: 'Firebase no está configurado para autenticación.',
         ...buildBaseResponse('/auth/validate'),
       };
     }

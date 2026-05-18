@@ -3,7 +3,7 @@
  */
 
 // VenuesPage.tsx
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { storage } from "@/services/mockApi";
 import { useAuthStore, type UserProfile } from "@/store/authStore";
@@ -32,6 +32,12 @@ import {
 } from "@heroicons/react/24/outline";
 import { useUIStore, type ThemeName } from "@/store/uiStore";
 import toast from "react-hot-toast";
+import {
+  digitsOnly,
+  formatDateInput,
+  toDisplayDateFromIso,
+  toIsoDateFromDisplay,
+} from "@/utils/inputFormat";
 
 interface Venue {
   id: string;
@@ -48,46 +54,11 @@ export const VenuesPage: React.FC = () => {
   const { user } = useAuthStore();
   const role = normalizeRole(user?.role) ?? "VISITANTE";
   const canManageVenues = role === "ADMIN";
-  const today = new Date().toISOString().split("T")[0];
+  const todayIso = new Date().toISOString().split("T")[0];
+  const todayDisplay = toDisplayDateFromIso(todayIso);
   const [isCreateVenueModalOpen, setIsCreateVenueModalOpen] = useState(false);
 
-  const [venues, setVenues] = useState<Venue[]>(() => {
-    const data = storage.get<Venue[]>("venues") || [];
-    if (data.length === 0) {
-      const initial: Venue[] = [
-        {
-          id: "1",
-          name: "Auditorio Principal",
-          capacity: 300,
-          type: "Teatro",
-          status: "AVAILABLE",
-          location: "Bloque A - Piso 1",
-          description: "Escenario principal para conciertos, obras y eventos masivos.",
-        },
-        {
-          id: "2",
-          name: "Sala de Danza",
-          capacity: 40,
-          type: "Danza",
-          status: "AVAILABLE",
-          location: "Bloque B - Piso 2",
-          description: "Espacio acondicionado con espejos y piso especializado.",
-        },
-        {
-          id: "3",
-          name: "Sala de Música",
-          capacity: 25,
-          type: "Música",
-          status: "MAINTENANCE",
-          location: "Bloque C - Piso 1",
-          description: "Sala de práctica y ensamble instrumental.",
-        },
-      ];
-      storage.set("venues", initial);
-      return initial;
-    }
-    return data;
-  });
+  const [venues, setVenues] = useState<Venue[]>(() => storage.get<Venue[]>("venues") || []);
 
   const [venueForm, setVenueForm] = useState<Omit<Venue, "id">>({
     name: "",
@@ -105,26 +76,43 @@ export const VenuesPage: React.FC = () => {
     const initialDates: Record<string, string> = {};
 
     venues.forEach((venue) => {
-      initialDates[venue.id] = savedDates[venue.id] || today;
+      initialDates[venue.id] = savedDates[venue.id] || todayIso;
     });
 
     return initialDates;
   });
 
+  const [selectedDateInputs, setSelectedDateInputs] = useState<Record<string, string>>(() => {
+    const initialInputs: Record<string, string> = {};
+    venues.forEach((venue) => {
+      const iso = selectedDates[venue.id] || todayIso;
+      initialInputs[venue.id] = toDisplayDateFromIso(iso) || todayDisplay;
+    });
+    return initialInputs;
+  });
+
   const handleDateChange = (venueId: string, date: string) => {
+    const formatted = formatDateInput(date);
+    setSelectedDateInputs((prev) => ({ ...prev, [venueId]: formatted }));
+    const iso = toIsoDateFromDisplay(formatted);
+    if (!iso) return;
+
     setSelectedDates((prev) => {
-      const updatedDates = { ...prev, [venueId]: date };
+      const updatedDates = { ...prev, [venueId]: iso };
       storage.set("venue_calendar_dates", updatedDates);
       return updatedDates;
     });
   };
 
-  const formatSelectedDate = (date: string) =>
-    new Date(`${date}T00:00:00`).toLocaleDateString("es-CO", {
+  const formatSelectedDate = (date: string) => {
+    const iso = date.includes("/") ? toIsoDateFromDisplay(date) : date;
+    if (!iso) return date;
+    return new Date(`${iso}T00:00:00`).toLocaleDateString("es-CO", {
       year: "numeric",
       month: "long",
       day: "numeric",
     });
+  };
 
   const formatVenueStatus = (status: Venue["status"]) => {
     if (status === "AVAILABLE") return "Disponible";
@@ -291,20 +279,23 @@ export const VenuesPage: React.FC = () => {
                 </label>
                 <div className="flex items-center gap-2">
                   <input
-                    type="date"
-                    value={selectedDates[venue.id] || today}
+                    type="text"
+                    value={selectedDateInputs[venue.id] || todayDisplay}
                     onChange={(event) => handleDateChange(venue.id, event.target.value)}
+                    inputMode="numeric"
+                    pattern="\d{2}/\d{2}/\d{2}"
+                    placeholder="DD/MM/AA"
                     className="input py-2"
                   />
                   <button
                     className="btn-ghost"
-                    onClick={() => handleDateChange(venue.id, today)}
+                    onClick={() => handleDateChange(venue.id, todayDisplay)}
                   >
                     Hoy
                   </button>
                 </div>
                 <p className="text-xs text-dark-500 dark:text-dark-400">
-                  Fecha seleccionada: {formatSelectedDate(selectedDates[venue.id] || today)}
+                  Fecha seleccionada: {formatSelectedDate(selectedDateInputs[venue.id] || todayDisplay)}
                 </p>
               </div>
             )}
@@ -491,19 +482,30 @@ export const ReservationsPage: React.FC = () => {
   const role = normalizeRole(user?.role) ?? "VISITANTE";
   const isVisitor = role === "VISITANTE";
 
-  const today = new Date().toISOString().split("T")[0];
+  const todayIso = new Date().toISOString().split("T")[0];
+  const todayDisplay = toDisplayDateFromIso(todayIso);
 
-  const venueOptions: VenueOption[] = [
-    { id: "auditorio-principal", name: "Auditorio Principal", type: "TEATRO" },
-    { id: "sala-teatro-experimental", name: "Sala Teatro Experimental", type: "TEATRO" },
-    { id: "sala-danza-a", name: "Sala de Danza A", type: "DANZA" },
-    { id: "sala-danza-b", name: "Sala de Danza B", type: "DANZA" },
-    { id: "sala-musica-ensamble", name: "Sala de Música Ensamble", type: "MUSICA" },
-    { id: "cabina-audio", name: "Cabina de Producción Sonora", type: "MUSICA" },
-    { id: "taller-pintura", name: "Taller de Pintura y Dibujo", type: "ARTES_VISUALES" },
-    { id: "galeria-central", name: "Galería Central", type: "ARTES_VISUALES" },
-    { id: "plazoleta-cultural", name: "Plazoleta Cultural", type: "MULTIPROPOSITO" },
-  ];
+  const normalizeVenueType = (type: string): VenueOption["type"] => {
+    const normalized = type.toUpperCase().replace(/\s+/g, "_");
+    if (normalized === "TEATRO") return "TEATRO";
+    if (normalized === "DANZA") return "DANZA";
+    if (normalized === "MUSICA" || normalized === "MÚSICA") return "MUSICA";
+    if (normalized === "ARTES_VISUALES" || normalized === "ARTES_VISUALES") return "ARTES_VISUALES";
+    return "MULTIPROPOSITO";
+  };
+
+  const [venueOptions, setVenueOptions] = useState<VenueOption[]>([]);
+
+  useEffect(() => {
+    const venues = storage.get<Array<{ id: string; name: string; type?: string }>>("venues") || [];
+    setVenueOptions(
+      venues.map((venue) => ({
+        id: venue.id,
+        name: venue.name,
+        type: normalizeVenueType(venue.type || "MULTIPROPOSITO"),
+      }))
+    );
+  }, []);
 
   const eventTypesByVenueType: Record<VenueOption["type"], string[]> = {
     TEATRO: ["Obra teatral", "Ensayo general", "Muestra escénica", "Conferencia cultural"],
@@ -514,58 +516,15 @@ export const ReservationsPage: React.FC = () => {
   };
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [reservations, setReservations] = useState<Reservation[]>(() => {
-    const saved = storage.get<Reservation[]>("reservations");
-    if (saved && saved.length > 0) return saved;
-
-    const initial: Reservation[] = [
-      {
-        id: "1",
-        venueId: "auditorio-principal",
-        venueName: "Auditorio Principal",
-        venueType: "TEATRO",
-        eventType: "Obra teatral",
-        eventName: "Concierto de Clausura",
-        date: today,
-        startTime: "18:00",
-        endTime: "21:00",
-        status: "APPROVED",
-      },
-      {
-        id: "2",
-        venueId: "sala-danza-a",
-        venueName: "Sala de Danza A",
-        venueType: "DANZA",
-        eventType: "Ensayo coreográfico",
-        eventName: "Ensayo Ballet",
-        date: today,
-        startTime: "14:00",
-        endTime: "17:00",
-        status: "PENDING",
-      },
-      {
-        id: "3",
-        venueId: "sala-musica-ensamble",
-        venueName: "Sala de Música Ensamble",
-        venueType: "MUSICA",
-        eventType: "Clase instrumental",
-        eventName: "Clase de Guitarra",
-        date: today,
-        startTime: "10:00",
-        endTime: "12:00",
-        status: "APPROVED",
-      },
-    ];
-
-    storage.set("reservations", initial);
-    return initial;
-  });
+  const [reservations, setReservations] = useState<Reservation[]>(
+    () => storage.get<Reservation[]>("reservations") || []
+  );
 
   const [formData, setFormData] = useState({
-    venueId: venueOptions[0].id,
-    eventType: eventTypesByVenueType[venueOptions[0].type][0],
+    venueId: "",
+    eventType: "",
     eventName: "",
-    date: today,
+    date: todayDisplay,
     startTime: "09:00",
     endTime: "11:00",
     status: "PENDING" as Reservation["status"],
@@ -575,16 +534,27 @@ export const ReservationsPage: React.FC = () => {
     requesterDocumentId: "",
   });
 
+  useEffect(() => {
+    if (venueOptions.length === 0 || formData.venueId) return;
+    const firstVenue = venueOptions[0];
+    setFormData((previous) => ({
+      ...previous,
+      venueId: firstVenue.id,
+      eventType: eventTypesByVenueType[firstVenue.type][0],
+    }));
+  }, [formData.venueId, venueOptions, eventTypesByVenueType]);
+
   const getVenueById = (venueId: string) =>
     venueOptions.find((venue) => venue.id === venueId);
 
   const resetForm = () => {
     const firstVenue = venueOptions[0];
+    if (!firstVenue) return;
     setFormData({
       venueId: firstVenue.id,
       eventType: eventTypesByVenueType[firstVenue.type][0],
       eventName: "",
-      date: today,
+      date: todayDisplay,
       startTime: "09:00",
       endTime: "11:00",
       status: "PENDING",
@@ -598,6 +568,11 @@ export const ReservationsPage: React.FC = () => {
   const handleCreateReservation = (event: React.FormEvent) => {
     event.preventDefault();
 
+    if (venueOptions.length === 0) {
+      toast.error("No hay escenarios registrados para reservar.");
+      return;
+    }
+
     const selectedVenue = getVenueById(formData.venueId);
     if (!selectedVenue) {
       toast.error("Selecciona un escenario válido.");
@@ -606,6 +581,12 @@ export const ReservationsPage: React.FC = () => {
 
     if (!formData.eventName.trim()) {
       toast.error("El nombre del evento es obligatorio.");
+      return;
+    }
+
+    const normalizedDate = toIsoDateFromDisplay(formData.date);
+    if (!normalizedDate) {
+      toast.error("Fecha inválida. Usa el formato DD/MM/AA.");
       return;
     }
 
@@ -644,7 +625,7 @@ export const ReservationsPage: React.FC = () => {
       venueType: selectedVenue.type,
       eventType: formData.eventType,
       eventName: formData.eventName.trim(),
-      date: formData.date,
+      date: normalizedDate,
       startTime: formData.startTime,
       endTime: formData.endTime,
       status: formData.status,
@@ -847,8 +828,13 @@ export const ReservationsPage: React.FC = () => {
                         className="input"
                         value={formData.requesterPhone}
                         onChange={(event) =>
-                          setFormData((previous) => ({ ...previous, requesterPhone: event.target.value }))
+                          setFormData((previous) => ({
+                            ...previous,
+                            requesterPhone: digitsOnly(event.target.value, 15),
+                          }))
                         }
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                       />
                     </div>
                     <div>
@@ -858,8 +844,13 @@ export const ReservationsPage: React.FC = () => {
                         className="input"
                         value={formData.requesterDocumentId}
                         onChange={(event) =>
-                          setFormData((previous) => ({ ...previous, requesterDocumentId: event.target.value }))
+                          setFormData((previous) => ({
+                            ...previous,
+                            requesterDocumentId: digitsOnly(event.target.value, 20),
+                          }))
                         }
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                       />
                     </div>
                   </>
@@ -867,15 +858,18 @@ export const ReservationsPage: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium mb-1">Fecha</label>
                   <input
-                    type="date"
+                    type="text"
                     className="input"
                     value={formData.date}
                     onChange={(event) =>
                       setFormData((previous) => ({
                         ...previous,
-                        date: event.target.value,
+                        date: formatDateInput(event.target.value),
                       }))
                     }
+                    inputMode="numeric"
+                    pattern="\d{2}/\d{2}/\d{2}"
+                    placeholder="DD/MM/AA"
                     required
                   />
                 </div>
