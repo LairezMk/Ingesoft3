@@ -185,6 +185,7 @@ export const VenuesPage: React.FC = () => {
       return;
     }
 
+    const today = new Date().toISOString().split("T")[0];
     const newVenue: Venue = {
       id: String(Date.now()),
       ...venueForm,
