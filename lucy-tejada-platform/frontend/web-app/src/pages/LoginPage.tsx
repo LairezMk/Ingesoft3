@@ -303,6 +303,14 @@ export const LoginPage: React.FC = () => {
             </button>
           </div>
 
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="mb-6 w-full rounded-xl border border-dark-200 dark:border-dark-700 px-4 py-2.5 text-sm font-medium text-dark-700 dark:text-dark-200 hover:bg-dark-50 dark:hover:bg-dark-800 transition-colors"
+          >
+            Continuar como visitante
+          </button>
+
           {mode === 'login' ? (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <Input

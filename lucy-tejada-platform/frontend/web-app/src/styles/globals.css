@@ -37,7 +37,7 @@
     --color-foreground: 248 250 252;
   }
 
-  :root[data-theme='ocean'] {
+  :root[data-theme="ocean"] {
     --primary-50: 236 253 255;
     --primary-100: 207 250 254;
     --primary-200: 165 243 252;
@@ -66,7 +66,7 @@
     --font-display: "Merriweather";
   }
 
-  :root[data-theme='sunset'] {
+  :root[data-theme="sunset"] {
     --primary-50: 255 241 242;
     --primary-100: 255 228 230;
     --primary-200: 254 205 211;
@@ -95,7 +95,7 @@
     --font-display: "Libre Baskerville";
   }
 
-  :root[data-theme='forest'] {
+  :root[data-theme="forest"] {
     --primary-50: 236 253 245;
     --primary-100: 209 250 229;
     --primary-200: 167 243 208;
@@ -131,11 +131,21 @@
   body {
     @apply bg-white dark:bg-dark-900 text-dark-900 dark:text-dark-50;
     @apply transition-colors duration-300;
-    font-family: var(--font-sans), Inter, system-ui, -apple-system, sans-serif;
+    font-family:
+      var(--font-sans),
+      Inter,
+      system-ui,
+      -apple-system,
+      sans-serif;
   }
 
   /* Tipografía base */
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-display font-semibold tracking-tight;
   }
 
@@ -174,7 +184,12 @@
     @apply transition-all duration-200 ease-out;
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
-    font-family: var(--font-sans), Inter, system-ui, -apple-system, sans-serif;
+    font-family:
+      var(--font-sans),
+      Inter,
+      system-ui,
+      -apple-system,
+      sans-serif;
   }
 
   .btn-primary {
@@ -210,13 +225,77 @@
 
   /* Inputs */
   .input {
-    @apply w-full px-4 py-3 rounded-xl;
-    @apply bg-white dark:bg-dark-800;
-    @apply border border-dark-200 dark:border-dark-700;
-    @apply text-dark-900 dark:text-dark-100;
-    @apply placeholder:text-dark-400 dark:placeholder:text-dark-500;
-    @apply transition-all duration-200;
-    @apply focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20;
+    @apply w-full px-4 py-3.5 rounded-lg;
+    @apply bg-white dark:bg-dark-700;
+    @apply border-2 border-dark-200 dark:border-dark-600;
+    @apply text-dark-900 dark:text-dark-50;
+    @apply placeholder:text-dark-500 dark:placeholder:text-dark-400;
+    @apply shadow-sm shadow-dark-900/5 dark:shadow-black/20;
+    @apply transition-all duration-200 ease-out;
+    @apply hover:border-primary-400 dark:hover:border-primary-500 hover:shadow-md;
+    @apply focus:outline-none focus:border-primary-500 dark:focus:border-primary-400 focus:ring-3 focus:ring-primary-400/30 dark:focus:ring-primary-500/25;
+    @apply focus:shadow-lg focus:shadow-primary-500/10 dark:focus:shadow-primary-400/5;
+    @apply disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-dark-100 dark:disabled:bg-dark-800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .input[type="number"] {
+    @apply text-right;
+  }
+
+  .input[type="number"]::-webkit-outer-spin-button,
+  .input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  select.input {
+    @apply appearance-none pr-11 cursor-pointer bg-no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1.25rem;
+  }
+
+  select.input {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9L12 15L18 9' stroke='%236366F1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+
+  .dark select.input {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9L12 15L18 9' stroke='%238B5CF6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+
+  select.input option {
+    @apply bg-white dark:bg-dark-700 text-dark-900 dark:text-dark-50;
+    @apply py-2 px-1;
+  }
+
+  select.input option:checked {
+    @apply bg-primary-500/10 dark:bg-primary-500/20;
+  }
+
+  textarea.input {
+    @apply min-h-[120px] resize-y leading-relaxed;
+    font-size: 0.9375rem;
+  }
+
+  .input[type="date"],
+  .input[type="time"] {
+    @apply pr-12 cursor-pointer;
+  }
+
+  .input[type="date"]::-webkit-calendar-picker-indicator,
+  .input[type="time"]::-webkit-calendar-picker-indicator {
+    opacity: 1;
+    cursor: pointer;
+    filter: brightness(0) saturate(100%) invert(46%) sepia(89%) saturate(1234%) hue-rotate(260deg);
+  }
+
+  .dark .input[type="date"]::-webkit-calendar-picker-indicator,
+  .dark .input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: brightness(0) saturate(100%) invert(71%) sepia(73%) saturate(623%) hue-rotate(260deg);
   }
 
   .input-error {
@@ -398,7 +477,7 @@
   }
 
   .artistic-border::after {
-    content: '';
+    content: "";
     @apply absolute bottom-0 left-0 w-16 h-1;
     @apply bg-gradient-to-r from-primary-500 to-secondary-500;
     @apply rounded-full;

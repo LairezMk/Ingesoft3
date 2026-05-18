@@ -39,6 +39,7 @@ interface NavItem {
 }
 
 const navigation: NavItem[] = [
+  { name: 'Inicio', href: '/', icon: HomeIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE'] },
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE'] },
   { name: 'Estudiantes', href: '/students', icon: UserGroupIcon, roles: ['ADMIN', 'DOCENTE'] },
   { name: 'Docentes', href: '/teachers', icon: AcademicCapIcon, roles: ['ADMIN'] },
@@ -56,7 +57,7 @@ const navigation: NavItem[] = [
   { name: 'Configuración', href: '/settings', icon: CogIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE'] },
 ];
 
-const publicNavigation = new Set(['/programs', '/venues', '/reservations']);
+const publicNavigation = new Set(['/', '/programs', '/venues', '/reservations']);
 
 export const Sidebar: React.FC = () => {
   const navigate = useNavigate();

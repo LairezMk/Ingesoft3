@@ -16,6 +16,7 @@ const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const StudentsPage = lazy(() => import('@/pages/StudentsPage'));
 const TeachersPage = lazy(() => import('@/pages/TeachersPage'));
 const ProgramsPage = lazy(() => import('@/pages/ProgramsPage'));
+const PublicHomePage = lazy(() => import('@/pages/PublicHomePage'));
 const GroupsPage = lazy(() => import('@/pages/GroupsPage'));
 const EnrollmentsPage = lazy(() => import('@/pages/EnrollmentsPage'));
 const AttendancePage = lazy(() => import('@/pages/AttendancePage'));
@@ -83,20 +84,6 @@ const PublicRoute: React.FC = () => {
   return <Outlet />;
 };
 
-const HomeRedirect: React.FC = () => {
-  const { isAuthenticated, isLoading, user } = useAuthStore();
-
-  if (isLoading) {
-    return <PageLoader />;
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/programs" replace />;
-  }
-
-  return <Navigate to={getDefaultRouteForRole(user?.role)} replace />;
-};
-
 // Router configuration
 export const router = createBrowserRouter([
   {
@@ -119,7 +106,11 @@ export const router = createBrowserRouter([
     children: [
       {
         path: '/',
-        element: <HomeRedirect />,
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <PublicHomePage />
+          </Suspense>
+        ),
       },
       {
         path: '/programs',
