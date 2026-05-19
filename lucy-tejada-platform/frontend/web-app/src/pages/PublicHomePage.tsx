@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { storage } from "@/services/mockApi";
 import { useAuthStore } from "@/store/authStore";
-import { BookOpenIcon, BuildingOfficeIcon, CalendarDaysIcon, ArrowRightIcon, Cog6ToothIcon, MoonIcon, LanguageIcon, EnvelopeIcon, PhoneIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { useUIStore } from "@/store/uiStore";
+import { BookOpenIcon, BuildingOfficeIcon, CalendarDaysIcon, ArrowRightIcon, Cog6ToothIcon, MoonIcon, SunIcon, EnvelopeIcon, PhoneIcon, MapPinIcon } from "@heroicons/react/24/outline";
 
 interface ProgramPreview {
   id: string;
@@ -44,6 +45,7 @@ const toDisplayDate = (value: string) => {
 export const PublicHomePage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const { darkMode, toggleDarkMode } = useUIStore();
   const [programs, setPrograms] = useState<ProgramPreview[]>([]);
   const [venues, setVenues] = useState<VenuePreview[]>([]);
   const [reservations, setReservations] = useState<ReservationPreview[]>([]);
@@ -219,32 +221,31 @@ export const PublicHomePage: React.FC = () => {
           <Cog6ToothIcon className="h-6 w-6 text-primary-500" />
           Preferencias de la Plataforma
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Link to="/settings/theme" className="group p-5 rounded-lg border-2 border-dark-200 dark:border-dark-700 hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-all cursor-pointer">
+        <div className="grid grid-cols-1 gap-4">
+          <button
+            type="button"
+            onClick={toggleDarkMode}
+            className="group text-left p-5 rounded-lg border-2 border-dark-200 dark:border-dark-700 hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-all cursor-pointer"
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <MoonIcon className="h-6 w-6 text-primary-500 group-hover:scale-110 transition-transform" />
+                {darkMode ? (
+                  <SunIcon className="h-6 w-6 text-primary-500 group-hover:scale-110 transition-transform" />
+                ) : (
+                  <MoonIcon className="h-6 w-6 text-primary-500 group-hover:scale-110 transition-transform" />
+                )}
                 <div>
                   <p className="font-semibold">Tema</p>
-                  <p className="text-sm text-dark-500">Oscuro, claro o automático</p>
+                  <p className="text-sm text-dark-500">
+                    {darkMode ? "Modo oscuro activo (clic para cambiar)" : "Modo claro activo (clic para cambiar)"}
+                  </p>
                 </div>
               </div>
-              <ArrowRightIcon className="h-5 w-5 text-dark-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary-500/10 text-primary-600 dark:text-primary-300 dark:bg-primary-500/15">
+                {darkMode ? "Oscuro" : "Claro"}
+              </span>
             </div>
-          </Link>
-
-          <Link to="/settings/language" className="group p-5 rounded-lg border-2 border-dark-200 dark:border-dark-700 hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-all cursor-pointer">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <LanguageIcon className="h-6 w-6 text-primary-500 group-hover:scale-110 transition-transform" />
-                <div>
-                  <p className="font-semibold">Idioma</p>
-                  <p className="text-sm text-dark-500">Español, Inglés o más</p>
-                </div>
-              </div>
-              <ArrowRightIcon className="h-5 w-5 text-dark-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
-            </div>
-          </Link>
+          </button>
         </div>
       </section>
     </div>
