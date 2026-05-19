@@ -17,6 +17,7 @@ const StudentsPage = lazy(() => import('@/pages/StudentsPage'));
 const TeachersPage = lazy(() => import('@/pages/TeachersPage'));
 const ProgramsPage = lazy(() => import('@/pages/ProgramsPage'));
 const PublicHomePage = lazy(() => import('@/pages/PublicHomePage'));
+const PublicInfoPage = lazy(() => import('@/pages/PublicInfoPage'));
 const GroupsPage = lazy(() => import('@/pages/GroupsPage'));
 const EnrollmentsPage = lazy(() => import('@/pages/EnrollmentsPage'));
 const AttendancePage = lazy(() => import('@/pages/AttendancePage'));
@@ -117,6 +118,14 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <ProgramsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: '/info',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <PublicInfoPage />
           </Suspense>
         ),
       },

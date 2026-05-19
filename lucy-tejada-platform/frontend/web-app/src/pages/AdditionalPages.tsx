@@ -32,6 +32,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useUIStore, type ThemeName } from "@/store/uiStore";
 import toast from "react-hot-toast";
+import { publishNotification } from "@/services/notificationService";
 import {
   digitsOnly,
   formatDateInput,
@@ -208,6 +209,14 @@ export const VenuesPage: React.FC = () => {
     setIsCreateVenueModalOpen(false);
     resetVenueForm();
     toast.success("Escenario creado correctamente.");
+
+    publishNotification({
+      kind: "info",
+      title: "Nuevo escenario disponible",
+      message: `${newVenue.name} fue agregado al catálogo de escenarios.`,
+      link: "/venues",
+      audience: { broadcast: true },
+    });
   };
 
   return (
@@ -642,6 +651,24 @@ export const ReservationsPage: React.FC = () => {
     setIsCreateModalOpen(false);
     resetForm();
     toast.success("Reserva creada correctamente.");
+
+    publishNotification({
+      kind: "info",
+      title: "Nueva solicitud de reserva",
+      message: `${newReservation.eventName} en ${newReservation.venueName} (${toDisplayDateFromIso(newReservation.date)} ${newReservation.startTime}-${newReservation.endTime}).`,
+      link: "/reservations",
+      audience: { roles: ["ADMIN"] },
+    });
+
+    if (newReservation.status === "APPROVED" && newReservation.requestedBy?.email) {
+      publishNotification({
+        kind: "success",
+        title: "Tu reserva fue aprobada",
+        message: `${newReservation.eventName} en ${newReservation.venueName} fue aprobada.`,
+        link: "/reservations",
+        audience: { emails: [newReservation.requestedBy.email] },
+      });
+    }
   };
 
   return (
@@ -689,6 +716,11 @@ export const ReservationsPage: React.FC = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-dark-500 uppercase">
                 Estado
               </th>
+              {role === "ADMIN" && (
+                <th className="px-6 py-3 text-left text-xs font-medium text-dark-500 uppercase">
+                  Acciones
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-dark-200 dark:divide-dark-700">
@@ -718,6 +750,44 @@ export const ReservationsPage: React.FC = () => {
                     {res.status === "APPROVED" ? "Aprobada" : "Pendiente"}
                   </span>
                 </td>
+                {role === "ADMIN" && (
+                  <td className="px-6 py-4">
+                    {res.status === "PENDING" ? (
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={() => {
+                          const updated = reservations.map((r) => (r.id === res.id ? { ...r, status: "APPROVED" as const } : r));
+                          storage.set("reservations", updated);
+                          setReservations(updated);
+                          toast.success("Reserva aprobada.");
+
+                          if (res.requestedBy?.email) {
+                            publishNotification({
+                              kind: "success",
+                              title: "Tu reserva fue aprobada",
+                              message: `${res.eventName} en ${res.venueName} fue aprobada.`,
+                              link: "/reservations",
+                              audience: { emails: [res.requestedBy.email] },
+                            });
+                          }
+
+                          publishNotification({
+                            kind: "info",
+                            title: "Reserva aprobada",
+                            message: `${res.eventName} fue marcada como aprobada.`,
+                            link: "/reservations",
+                            audience: { roles: ["ADMIN"] },
+                          });
+                        }}
+                      >
+                        Aprobar
+                      </button>
+                    ) : (
+                      <span className="text-sm text-dark-500">—</span>
+                    )}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

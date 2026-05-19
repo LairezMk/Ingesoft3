@@ -6,6 +6,7 @@
 
 import React, { useEffect } from 'react';
 import { RouterProvider } from 'react-router-dom';
+import { useNotificationSync } from '@/hooks/useNotificationSync';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { router } from './router';
@@ -27,6 +28,7 @@ const queryClient = new QueryClient({
 
 export const App: React.FC = () => {
   const { darkMode, setDarkMode, theme, setTheme } = useUIStore();
+  useNotificationSync();
   const { user, setUser, setLoading } = useAuthStore();
 
   // Initialize dark mode from localStorage

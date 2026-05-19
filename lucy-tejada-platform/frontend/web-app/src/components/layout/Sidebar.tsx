@@ -50,6 +50,7 @@ const navigation: NavItem[] = [
   { name: 'Evaluaciones', href: '/evaluations', icon: ChartBarIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE'] },
   { name: 'Escenarios', href: '/venues', icon: BuildingOfficeIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE'] },
   { name: 'Reservas', href: '/reservations', icon: CalendarDaysIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE'] },
+  { name: 'Información', href: '/info', icon: DocumentTextIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE'] },
   { name: 'Contratos', href: '/contracts', icon: DocumentTextIcon, roles: ['ADMIN'] },
   { name: 'Mantenimiento', href: '/maintenance', icon: WrenchScrewdriverIcon, roles: ['ADMIN'] },
   { name: 'Reportes', href: '/reports', icon: ChartBarIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE'] },
@@ -57,7 +58,7 @@ const navigation: NavItem[] = [
   { name: 'Configuración', href: '/settings', icon: CogIcon, roles: ['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'VISITANTE'] },
 ];
 
-const publicNavigation = new Set(['/', '/programs', '/venues', '/reservations']);
+const publicNavigation = new Set(['/', '/programs', '/venues', '/reservations', '/info']);
 
 export const Sidebar: React.FC = () => {
   const navigate = useNavigate();

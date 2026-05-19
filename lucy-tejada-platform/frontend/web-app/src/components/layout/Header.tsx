@@ -4,13 +4,14 @@
  * ============================================
  */
 
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
 import { useNavigate } from 'react-router-dom';
 import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
-import { getRoleLabel } from '@/utils/rbac';
+import { getRoleLabel, normalizeRole } from '@/utils/rbac';
+import { markAllRead, markRead } from '@/services/notificationService';
 import {
   Bars3Icon,
   MagnifyingGlassIcon,
@@ -21,9 +22,23 @@ import {
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();
-  const { darkMode, toggleDarkMode, setSidebarOpen } = useUIStore();
+  const { darkMode, toggleDarkMode, setSidebarOpen, notifications, markAllNotificationsRead, markNotificationRead } = useUIStore();
   const { user } = useAuthStore();
   const roleLabel = user ? getRoleLabel(user.role) : 'Visitante';
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
+
+  const handleMarkAllRead = () => {
+    const role = normalizeRole(user?.role) ?? 'VISITANTE';
+    markAllRead(role, user?.email ?? null);
+    markAllNotificationsRead();
+  };
+
+  const handleMarkRead = (id: string) => {
+    markRead(id, user?.email ?? null);
+    markNotificationRead(id);
+  };
 
   return (
     <header className="sticky top-0 z-30 glass border-b border-dark-200/50 dark:border-dark-700/50">
@@ -66,14 +81,79 @@ export const Header: React.FC = () => {
           </button>
 
           {/* Notifications */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="relative p-2 rounded-xl hover:bg-dark-100 dark:hover:bg-dark-800 text-dark-500"
-          >
-            <BellIcon className="w-6 h-6" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-          </motion.button>
+          <div className="relative">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setNotificationsOpen((v) => !v)}
+              className="relative p-2 rounded-xl hover:bg-dark-100 dark:hover:bg-dark-800 text-dark-500"
+              aria-label="Notificaciones"
+              title="Notificaciones"
+            >
+              <BellIcon className="w-6 h-6" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1.5 text-[10px] font-bold rounded-full bg-red-500 text-white flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </motion.button>
+
+            {notificationsOpen && (
+              <div className="absolute right-0 mt-2 w-[360px] max-w-[92vw] rounded-2xl border border-dark-200/70 dark:border-dark-700 bg-white dark:bg-dark-800 shadow-xl overflow-hidden z-50">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-dark-200 dark:border-dark-700">
+                  <p className="font-semibold text-dark-900 dark:text-dark-50">Notificaciones</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleMarkAllRead}
+                      className="text-xs font-semibold text-primary-600 hover:text-primary-500"
+                    >
+                      Marcar todo como leído
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNotificationsOpen(false)}
+                      className="text-xs font-semibold text-dark-500 hover:text-dark-700 dark:hover:text-dark-200"
+                    >
+                      Cerrar
+                    </button>
+                  </div>
+                </div>
+
+                <div className="max-h-[420px] overflow-auto">
+                  {notifications.length === 0 ? (
+                    <div className="p-6 text-sm text-dark-500">No tienes notificaciones.</div>
+                  ) : (
+                    <ul className="divide-y divide-dark-200 dark:divide-dark-700">
+                      {notifications.slice(0, 20).map((n) => (
+                        <li key={n.id} className={clsx('p-4 hover:bg-dark-50 dark:hover:bg-dark-700/40', !n.read && 'bg-primary-50/60 dark:bg-primary-900/10')}>
+                          <button
+                            type="button"
+                            className="w-full text-left"
+                            onClick={() => {
+                              handleMarkRead(n.id);
+                              if (n.link) navigate(n.link);
+                            }}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className={clsx('font-semibold truncate', n.read ? 'text-dark-900 dark:text-dark-100' : 'text-primary-700 dark:text-primary-200')}>
+                                  {n.title}
+                                </p>
+                                {n.message && <p className="mt-1 text-sm text-dark-600 dark:text-dark-300 line-clamp-2">{n.message}</p>}
+                                <p className="mt-1 text-xs text-dark-400">{new Date(n.timestamp).toLocaleString('es-CO')}</p>
+                              </div>
+                              {!n.read && <span className="mt-1 h-2 w-2 rounded-full bg-primary-500" />}
+                            </div>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Dark Mode Toggle */}
           <motion.button

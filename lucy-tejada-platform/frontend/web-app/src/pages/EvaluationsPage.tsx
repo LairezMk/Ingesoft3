@@ -7,6 +7,8 @@ import { StarIcon as StarOutline } from '@heroicons/react/24/outline';
 import { useAuthStore } from '@/store/authStore';
 import { normalizeRole } from '@/utils/rbac';
 import { storage } from '@/services/mockApi';
+import toast from "react-hot-toast";
+import { publishNotification } from "@/services/notificationService";
 
 const EvaluationsPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -78,7 +80,17 @@ const EvaluationsPage: React.FC = () => {
     storage.set('evaluations', updated);
     setEvaluations(updated);
 
-    alert('Evaluación guardada exitosamente');
+    toast.success('Evaluación guardada exitosamente');
+
+    const studentsData = storage.get<Array<{ firstName: string; lastName: string; email: string }>>("students") || [];
+    const match = studentsData.find((s) => `${s.firstName} ${s.lastName}`.trim() === selectedStudent);
+    publishNotification({
+      kind: "success",
+      title: "Nueva calificación registrada",
+      message: `Se registró una evaluación para ${selectedStudent} (promedio ${newEvaluation.average}).`,
+      link: "/evaluations",
+      audience: match?.email ? { emails: [match.email] } : { roles: ["ESTUDIANTE"] },
+    });
     setSelectedStudent('');
     setRatings({ creativity: 0, technique: 0, participation: 0, progress: 0 });
     setComments('');

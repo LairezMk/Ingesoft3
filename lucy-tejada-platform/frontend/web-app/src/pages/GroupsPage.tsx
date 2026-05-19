@@ -3,6 +3,7 @@
  */
 import React, { useState, useEffect } from "react";
 import { storage } from "@/services/mockApi";
+import { publishNotification } from "@/services/notificationService";
 import {
   PlusIcon,
   PencilIcon,
@@ -54,6 +55,20 @@ const GroupsPage: React.FC = () => {
     storage.set("groups", updated);
     setIsModalOpen(false);
     loadGroups();
+
+    if (!editing && formData.teacherName) {
+      const teachers = storage.get<Array<{ firstName: string; lastName: string; email: string }>>("teachers") || [];
+      const teacher = teachers.find((t) => `${t.firstName} ${t.lastName}`.trim() === String(formData.teacherName).trim());
+      if (teacher?.email) {
+        publishNotification({
+          kind: "info",
+          title: "Nuevo grupo asignado",
+          message: `Fuiste asignado al grupo ${String(formData.name || "(sin nombre)")}.`,
+          link: "/groups",
+          audience: { emails: [teacher.email] },
+        });
+      }
+    }
   };
 
   return (

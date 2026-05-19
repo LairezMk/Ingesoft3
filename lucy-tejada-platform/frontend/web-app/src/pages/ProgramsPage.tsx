@@ -7,6 +7,7 @@ import { storage } from "@/services/mockApi";
 import { useAuthStore } from "@/store/authStore";
 import { normalizeRole } from "@/utils/rbac";
 import toast from "react-hot-toast";
+import { publishNotification } from "@/services/notificationService";
 import {
   PlusIcon,
   PencilIcon,
@@ -101,6 +102,27 @@ const ProgramsPage: React.FC = () => {
     storage.set("programs", updated);
     setIsModalOpen(false);
     loadPrograms();
+
+    if (!editing) {
+      publishNotification({
+        kind: "info",
+        title: `Nuevo curso: ${String((normalizedFormData as any).name || formData.name || "Programa")}`,
+        message: "Ya está disponible en el catálogo.",
+        link: "/programs",
+        audience: { roles: ["ESTUDIANTE", "VISITANTE"], broadcast: false },
+      });
+
+      const selectedTeacher = teacherOptions.find((t) => t.id === String((normalizedFormData as any).teacherId || formData.teacherId || ""));
+      if (selectedTeacher?.email) {
+        publishNotification({
+          kind: "success",
+          title: "Te asignaron a un curso",
+          message: `${String((normalizedFormData as any).name || formData.name || "Programa")} ahora está a tu cargo.",
+          link: "/programs",
+          audience: { emails: [selectedTeacher.email] },
+        });
+      }
+    }
   };
 
   const createEnrollmentRequest = (studentName: string, program: Program, requestedByEmail?: string) => {
@@ -127,6 +149,13 @@ const ProgramsPage: React.FC = () => {
         : user.email;
     createEnrollmentRequest(studentName, program, user.email);
     toast.success("Solicitud de matrícula enviada.");
+    publishNotification({
+      kind: "info",
+      title: "Nueva solicitud de matrícula",
+      message: `${studentName} solicitó matrícula en ${program.name}.",
+      link: "/enrollments",
+      audience: { roles: ["ADMIN", "DOCENTE"] },
+    });
   };
 
 

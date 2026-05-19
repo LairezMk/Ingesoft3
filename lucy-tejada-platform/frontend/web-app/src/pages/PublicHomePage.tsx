@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { storage } from "@/services/mockApi";
 import { useAuthStore } from "@/store/authStore";
 import { useUIStore } from "@/store/uiStore";
-import { BookOpenIcon, BuildingOfficeIcon, CalendarDaysIcon, ArrowRightIcon, Cog6ToothIcon, MoonIcon, SunIcon, EnvelopeIcon, PhoneIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { BookOpenIcon, BuildingOfficeIcon, CalendarDaysIcon, ArrowRightIcon, Cog6ToothIcon, MoonIcon, SunIcon } from "@heroicons/react/24/outline";
 
 interface ProgramPreview {
   id: string;
@@ -162,56 +162,17 @@ export const PublicHomePage: React.FC = () => {
         </article>
       </section>
 
-      {/* Información General */}
       <section className="card p-6 md:p-8">
-        <h2 className="text-2xl font-bold mb-6">Información General</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-lg font-semibold mb-3">Sobre Nosotros</h3>
-            <p className="text-dark-600 dark:text-dark-300 leading-relaxed">
-              El Centro Cultural Lucy Tejada es un espacio dedicado a la promoción, enseñanza y difusión 
-              de las artes y la cultura. Ofrecemos cursos, escenarios para presentaciones y la posibilidad 
-              de reservar espacios para eventos culturales.
+            <h2 className="text-2xl font-bold">Información, contacto y políticas</h2>
+            <p className="mt-1 text-dark-500">
+              Consulta la información general del centro cultural, canales de contacto y políticas.
             </p>
           </div>
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Horarios de Atención</h3>
-            <ul className="space-y-2 text-dark-600 dark:text-dark-300">
-              <li><span className="font-medium">Lunes a Viernes:</span> 8:00 AM - 6:00 PM</li>
-              <li><span className="font-medium">Sábados:</span> 9:00 AM - 4:00 PM</li>
-              <li><span className="font-medium">Domingos:</span> Cerrado</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      {/* Contacto */}
-      <section className="card p-6 md:p-8">
-        <h2 className="text-2xl font-bold mb-6">Contacto</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <a href="mailto:info@lucytejada.com" className="group p-4 rounded-lg border border-dark-200 dark:border-dark-700 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-colors">
-            <div className="flex items-center gap-3 mb-2">
-              <EnvelopeIcon className="h-5 w-5 text-primary-500 group-hover:scale-110 transition-transform" />
-              <span className="font-medium">Correo</span>
-            </div>
-            <p className="text-sm text-dark-600 dark:text-dark-400">info@lucytejada.com</p>
-          </a>
-          
-          <a href="tel:+573001234567" className="group p-4 rounded-lg border border-dark-200 dark:border-dark-700 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-colors">
-            <div className="flex items-center gap-3 mb-2">
-              <PhoneIcon className="h-5 w-5 text-primary-500 group-hover:scale-110 transition-transform" />
-              <span className="font-medium">Teléfono</span>
-            </div>
-            <p className="text-sm text-dark-600 dark:text-dark-400">+57 (300) 123-4567</p>
-          </a>
-          
-          <div className="group p-4 rounded-lg border border-dark-200 dark:border-dark-700 bg-dark-50 dark:bg-dark-800/50">
-            <div className="flex items-center gap-3 mb-2">
-              <MapPinIcon className="h-5 w-5 text-primary-500" />
-              <span className="font-medium">Ubicación</span>
-            </div>
-            <p className="text-sm text-dark-600 dark:text-dark-400">Calle Principal 123, Ciudad</p>
-          </div>
+          <Link to="/info" className="btn-outline">
+            Ver información
+          </Link>
         </div>
       </section>
 

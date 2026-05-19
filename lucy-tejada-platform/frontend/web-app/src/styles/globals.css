@@ -302,6 +302,21 @@
     @apply border-red-500 focus:border-red-500 focus:ring-red-500/20;
   }
 
+  @keyframes toast-progress {
+    from {
+      width: 100%;
+    }
+    to {
+      width: 0%;
+    }
+  }
+
+  .toast-progress {
+    animation-name: toast-progress;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+  }
+
   /* Cards */
   .card {
     @apply bg-white dark:bg-dark-800;

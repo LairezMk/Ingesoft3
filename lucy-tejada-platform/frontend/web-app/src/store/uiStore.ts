@@ -22,13 +22,23 @@ const applyThemeAttribute = (theme: ThemeName) => {
   document.documentElement.setAttribute('data-theme', theme);
 };
 
+export interface AppNotification {
+  id: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  title: string;
+  message?: string;
+  timestamp: string; // ISO
+  link?: string;
+  read?: boolean;
+}
+
 interface UIState {
   sidebarOpen: boolean;
   sidebarCollapsed: boolean;
   darkMode: boolean;
   theme: ThemeName;
   activeModal: string | null;
-  notifications: Notification[];
+  notifications: AppNotification[];
 
   // Actions
   toggleSidebar: () => void;
@@ -39,17 +49,12 @@ interface UIState {
   setTheme: (theme: ThemeName) => void;
   openModal: (modalId: string) => void;
   closeModal: () => void;
-  addNotification: (notification: Notification) => void;
+  addNotification: (notification: AppNotification) => void;
+  setNotifications: (notifications: AppNotification[]) => void;
   removeNotification: (id: string) => void;
   clearNotifications: () => void;
-}
-
-interface Notification {
-  id: string;
-  type: 'success' | 'error' | 'warning' | 'info';
-  title: string;
-  message?: string;
-  timestamp: Date;
+  markAllNotificationsRead: () => void;
+  markNotificationRead: (id: string) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -93,8 +98,10 @@ export const useUIStore = create<UIState>()(
 
       addNotification: (notification) =>
         set((state) => ({
-          notifications: [...state.notifications, notification],
+          notifications: [notification, ...state.notifications].slice(0, 100),
         })),
+
+      setNotifications: (notifications) => set({ notifications }),
 
       removeNotification: (id) =>
         set((state) => ({
@@ -102,6 +109,16 @@ export const useUIStore = create<UIState>()(
         })),
 
       clearNotifications: () => set({ notifications: [] }),
+
+      markAllNotificationsRead: () =>
+        set((state) => ({
+          notifications: state.notifications.map((n) => ({ ...n, read: true })),
+        })),
+
+      markNotificationRead: (id) =>
+        set((state) => ({
+          notifications: state.notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
+        })),
     }),
     {
       name: 'ui-storage',
