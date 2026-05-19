@@ -117,7 +117,7 @@ const ProgramsPage: React.FC = () => {
         publishNotification({
           kind: "success",
           title: "Te asignaron a un curso",
-          message: `${String((normalizedFormData as any).name || formData.name || "Programa")} ahora está a tu cargo.",
+          message: `${String((normalizedFormData as any).name || formData.name || "Programa")} ahora está a tu cargo.`,
           link: "/programs",
           audience: { emails: [selectedTeacher.email] },
         });
@@ -152,7 +152,7 @@ const ProgramsPage: React.FC = () => {
     publishNotification({
       kind: "info",
       title: "Nueva solicitud de matrícula",
-      message: `${studentName} solicitó matrícula en ${program.name}.",
+      message: `${studentName} solicitó matrícula en ${program.name}.`,
       link: "/enrollments",
       audience: { roles: ["ADMIN", "DOCENTE"] },
     });
